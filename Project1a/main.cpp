@@ -160,13 +160,13 @@ void test2_extreme(void) {
 		v.push_back(num);
 
 		if (v[i] != std_v[i]) {
-			throw exception("test2 failed!");
+			throw exception("test2_extreme failed on []!");
 		}
 	}
 
 	for (int i=0; i < LARGE; i++) {
 		if (v[i] != std_v[i]) {
-			throw exception("test2 failed!");
+			throw exception("test2_extreme failed on size!");
 		}
 	}
 }

@@ -99,7 +99,7 @@ public:
 		if (!size) {
 			init();
 		} else {
-			data = (T*) ::operator new(size * sizeof(T));
+			data = new T [size]; // (T*) ::operator new(size * sizeof(T));
 			fidx = eidx = 0;
 			capacity = size;
 			unit = INITIAL_UNIT;
