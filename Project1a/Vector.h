@@ -43,16 +43,15 @@ private:
 		// allocate mem but don't initialize it. 
 		data = (T*) ::operator new(capacity * sizeof(T));
 		
-		for (uint64_t i = fidx; i != inc_mod(eidx); i = inc_mod(i)) {
-			data[i] = that.data[i];
+		for (uint64_t i = 0; i < size(); i++) {
+			data[(fidx+1+i) % capacity] = that.data[(fidx+1+i) % capacity];
 		}
 	}
 
 	void destroy(void) {
 		if (data) {
-			for (uint64_t i=inc_mod(fidx); i != inc_mod(eidx); i = inc_mod(i)) {
-				 // cout << "CCC: " << i << "\n";
-				data[i].~T();
+			for (uint64_t i = 0; i < size(); i++) {
+				data[(fidx+1+i) % capacity].~T();
 			}
 
 			::operator delete(data); // deallocate memory (no destructors) 
@@ -72,11 +71,16 @@ private:
 	}
 
 	uint64_t inc_mod(uint64_t i) const {
-		return (i + 1) % capacity;
+		return modulo(i+1, capacity);
 	}
 
 	uint64_t dec_mod(uint64_t i) const {
-		return (i - 1) % capacity;
+		return modulo(i-1, capacity);
+	}
+
+	int modulo(int i, int n) const {
+	  const int k = i % n;
+	  return k < 0 ? k + n : k;
 	}
 
 public:
@@ -129,25 +133,16 @@ public:
 			throw std::out_of_range("subscript out of range");
 		}
 
-		return data [(fidx + 1 + k) % capacity];
-
-		/*
-			if (fidx + 1 + k < capacity) {
-				return data[fidx + 1 + k];
-			}
-
-			return data [k - (capacity - fidx - 1)];
-		*/
+		return data[(fidx + 1 + k) % capacity];
 	}
 
-
-	/* const T& operator[](uint64_t k) const {
-		if (k >= size()) {
-			throw std::out_of_range("subscript out of range");			
+	const T& operator[](uint64_t k) const {
+		if (k < 0 || k >= size()) {
+			throw std::out_of_range("subscript out of range");
 		}
 
-		return data[begin+k];
-	} */
+		return data[(fidx + 1 + k) % capacity];
+	}
 
 	void push_back(const T& elem) {
 		allocIfNull();
@@ -219,8 +214,8 @@ public:
 	}
 
 	void print(void) {
-		for (uint64_t i = inc_mod(fidx); i != inc_mod(eidx); i=inc_mod(i)) {
-			cout << data[i] << " ";
+		for (uint64_t i = 0; i < size(); i++) {
+			cout << data[(fidx+1+i) % capacity] << " ";
 		}
 
 		cout << "\n";
