@@ -194,7 +194,7 @@ void test3(void) {
 void test4(void) {
 	vector<int> v(4);
 
-	for (int i=0; i < UNIT; i++) {
+	for (int i=0; i < LARGE; i++) {
 		v.push_back(i);
 
 		if (v.size() != i+1) {
@@ -202,7 +202,7 @@ void test4(void) {
 		}
 	}
 
-	for (int i=0; i < UNIT; i++) {
+	for (int i=0; i < LARGE; i++) {
 		v.pop_front();
 	}
 
@@ -213,7 +213,7 @@ void test4(void) {
 
 void foo(vector<int> v, std::vector<int> std_v, std::string msg) {
 
-	for (int i=0; i < UNIT; i++) {
+	for (int i=0; i < LARGE; i++) {
 		if (v[i] != std_v[i]) {
 			throw exception(msg);
 		}
@@ -224,28 +224,28 @@ void test5(void) {
 	vector<int> v;
 	std::vector<int> std_v;
 
-	for (int i=0; i < UNIT; i++) {
+	for (int i=0; i < LARGE; i++) {
 		v.push_back(i);
 		std_v.push_back(i);
 	}
 
 	foo(v, std_v, "test5 failed in foo 1!");
 
-	for (int i=0; i < UNIT; i++) {
+	for (int i=0; i < LARGE; i++) {
 		v.push_front(i);
 		std_v.insert(std_v.begin(), i);
 	}
 
 	foo(v, std_v, "test5 failed in foo 2!");
 
-	for (int i=0; i < UNIT/5; i++) {
+	for (int i=0; i < LARGE/5; i++) {
 		v.pop_front();
 		std_v.erase(std_v.begin());
 	}
 
 	foo(v, std_v, "test5 failed in foo 3!");
 
-	for (int i=0; i < UNIT/5; i++) {
+	for (int i=0; i < LARGE/5; i++) {
 		v.pop_back();
 		std_v.erase(std_v.begin() + std_v.size()-1);
 	}
@@ -257,7 +257,7 @@ void test6(void) {
 	vector<int> v;
 	std::vector<int> std_v;
 
-	for (int i=0; i < UNIT; i++) {
+	for (int i=0; i < LARGE; i++) {
 		v.push_back(i);
 		std_v.push_back(i);
 	}
@@ -266,7 +266,7 @@ void test6(void) {
 
 	foo(v2, std_v, "test6 failed in foo 1!");
 
-	for (int i=0; i < UNIT; i++) {
+	for (int i=0; i < LARGE; i++) {
 		v2.push_front(i+1);
 		std_v.insert(std_v.begin(), i+1);
 	}
@@ -275,14 +275,14 @@ void test6(void) {
 
 	foo(v3, std_v, "test6 failed in foo 2!");
 
-	for (int i=0; i < UNIT/5; i++) {
+	for (int i=0; i < LARGE/5; i++) {
 		v3.pop_front();
 		std_v.erase(std_v.begin());
 	}
 
 	foo(v3, std_v, "test6 failed in foo 3!");
 
-	for (int i=0; i < UNIT/5; i++) {
+	for (int i=0; i < LARGE/5; i++) {
 		v3.pop_back();
 		std_v.erase(std_v.begin() + std_v.size()-1);
 	}
