@@ -14,28 +14,31 @@ int main(void) {
 
 	std::vector<int> std_v;
 
-	for (int i=0; i < 9; i++) {
+	for (int i=0; i < 10; i++) {
 		std_v.push_back(i);
 		// v.print();
 		std_v.insert(std_v.begin(), i);
 
 		// v.push_back(i);
 		v.push_back(i);
+		v.push_front(i);
 	//	v.push_front(i);
 		// v.push_front(i);
 	}
 
-	v.print();
+	cout << endl;
 
-	for (int i = 0; i < 4; i++) {
+	// v.print();
+
+	/*for (int i = 0; i < 4; i++) {
 		v.pop_back();
-	}
+	}*/
 
 	v.print();
 
-	// for (int i=0; i<std_v.size(); i++) {
-	// 	cout << std_v[i] << " ";
-	// }
+	for (int i=0; i<std_v.size(); i++) {
+		cout << std_v[i] << " ";
+	}
 
 	// cout << v[0] << v[1] << v[2];
 

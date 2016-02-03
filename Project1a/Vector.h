@@ -7,96 +7,76 @@
 #include <cstdint>
 #include <iostream>
 
+#define INITIAL_UNIT 8
+
 using std::cout;
 
 namespace epl {
 
-const int default_size = 8;
-
 template <typename T>
 class vector {
 private:
-	T* array_front;
-	T* array_back;
-
+	T* data;
+	uint64_t capacity;
 	uint64_t fidx;
-	uint64_t bidx;
-	
-	uint64_t fcap;
-	uint64_t bcap;
+	uint64_t eidx;
+	uint64_t unit;
 
 	void init(void) {
-		this->array_front=nullptr;
-		this->array_back=nullptr;
-		this->fidx=this->bidx=0;
-		this->fcap=this->bcap=default_size;
+		data = nullptr;
+		capacity = INITIAL_UNIT; // ????
+		fidx = eidx = 0;
+		unit = INITIAL_UNIT;
 	}
 
-	void copy(vector const& that) {
-		this->fidx=that.fidx;
-		this->bidx=that.bidx;
+	void copy(vector const & that) {
+		fidx = that.fidx;
+		eidx = that.eidx;
+		capacity = that.capacity;
+		unit = that.unit; // TODO: think more...
 
-		this->fcap=that.fcap;
-		this->bcap=that.bcap;
-
-		this->array_front=new T[fcap];
-		this->array_back=new T[bcap];
-
-		for (uint64_t i=0; i<fidx; i++) {
-			this->array_front[i]=that.array_front[i];
+		if (!that.data) {
+			data = nullptr;
+			return;
 		}
 
-		for (uint64_t i=0; i<bidx; i++) {
-			this->array_back[i]=that.array_back[i];
+		// allocate mem but don't initialize it. 
+		data = (T*) ::operator new(capacity * sizeof(T));
+		
+		for (uint64_t i = fidx; i != inc_mod(eidx); i = inc_mod(i)) {
+			data[i] = that.data[i];
 		}
 	}
 
 	void destroy(void) {
-		destroy_front();
-		destroy_back();
-	}
+		if (data) {
+			for (uint64_t i=inc_mod(fidx); i != inc_mod(eidx); i = inc_mod(i)) {
+				 // cout << "CCC: " << i << "\n";
+				data[i].~T();
+			}
 
-	void destroy_front(void) {
-		// Field data might be nullptr.
-
-		if (this->array_front) {
-			delete[] this->array_front;
+			::operator delete(data); // deallocate memory (no destructors) 
 		}
-	}
-
-	void destroy_back(void) {
-		// Field data might be nullptr.
-
-		if (this->array_back) {
-			delete[] this->array_back;
-		}
+		// why can't we use delete[]?
 	}
 
 	void allocIfNull(void) {
-		// Check if data has not yet been initialized (nullptr).
-		if (!this->array_front) {
-			this->array_front=new T[fcap];
-		}
-
-		if (!this->array_back) {
-			this->array_back=new T[bcap];
+		// Check if data has not been allocated (nullptr).
+		if (!data) {
+			data = (T*) ::operator new(capacity * sizeof(T));
 		}
 	}
 
-	uint64_t remaining_back(void) {
-		return bcap-bidx-1;
+	uint64_t empty_spots(void) const {
+		return capacity - size() - 1; 
 	}
 
-	uint64_t remaining_front(void) {
-		return fcap-fidx-1;
+	uint64_t inc_mod(uint64_t i) const {
+		return (i + 1) % capacity;
 	}
 
-	uint64_t size_back(void) const {
-		return bidx;
-	}
-
-	uint64_t size_front(void) const {
-		return fidx;
+	uint64_t dec_mod(uint64_t i) const {
+		return (i - 1) % capacity;
 	}
 
 public:
@@ -115,10 +95,10 @@ public:
 		if (!size) {
 			init();
 		} else {
-			this->array_front=new T[size+1];
-			this->array_back=new T[size+1];
-			this->fidx=this->bidx=0;
-			this->fcap=this->bcap=size+1;
+			data = (T*) ::operator new(size * sizeof(T));
+			fidx = eidx = 0;
+			capacity = size;
+			unit = INITIAL_UNIT;
 		}
 	}
 
@@ -137,39 +117,28 @@ public:
 	}
 
 	uint64_t size(void) const {
-		return size_back() + size_front();
+		if (eidx >= fidx) {
+			return eidx - fidx;
+		}
+
+		return capacity - (fidx - eidx);
 	}
 
 	T& operator[](uint64_t k) {
-		if (k >= size()) {
+		if (k < 0 || k >= size()) {
 			throw std::out_of_range("subscript out of range");
 		}
 
-		uint64_t idx=fidx;
+		return data [(fidx + 1 + k) % capacity];
 
-		while (idx > 1 && k != 0) {
-			idx -= 1;
-			k -= 1;
-		}
+		/*
+			if (fidx + 1 + k < capacity) {
+				return data[fidx + 1 + k];
+			}
 
-		if (k == 0) {
-			return array_front[idx];
-		} 
-
-		if (fidx) {
-			k-=1;
-		}
-
-		idx=1;
-
-		while (idx <= bidx && k != 0) {
-			idx+=1;
-			k -= 1;
-		}
-
-		return array_back[idx];
+			return data [k - (capacity - fidx - 1)];
+		*/
 	}
-
 
 
 	/* const T& operator[](uint64_t k) const {
@@ -183,66 +152,75 @@ public:
 	void push_back(const T& elem) {
 		allocIfNull();
 
-		// If there is no empty spot at the back of the array.
-		if (!remaining_back()) {
-			bcap*=2; // Double the capacity.
+		// If there is no empty spot.
+		if (!empty_spots()) {
+			T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
 
-			T* array_back_new=new T[bcap];
-
-			for (uint64_t i=0; i <= bidx; i++) {
-				array_back_new[i]=this->array_back[i];
+			for (uint64_t i = 0; i < capacity; i++) {
+				new_data[i] = data[(fidx + i)%capacity]; // ????
 			}
 
-			destroy_back();
-			this->array_back=array_back_new;
+			fidx=0;
+			eidx=capacity-1;
+			capacity += unit;
+			unit *= 2;
+
+			destroy();
+			this->data=new_data;
 		}
 
 		//T newElem{elem}; // Calling T's copy constructor???
-		this->array_back[++bidx]=T{elem};
+
+		eidx = inc_mod(eidx);
+		this->data[eidx]=T{elem};
 	}
 
 	void pop_back(void) {
-		// If there is no empty spot at the back of the array.
-
-		if (bidx != 0) {
-			this->array_back[bidx--].~T();
-		} else if (fidx != 0)
-
-		if (bidx == 0) {
+		// If array is empty.
+		if (!size()) {
 			throw std::out_of_range("subscript out of range");
 		}
 
-
-		
+		this->data[eidx].~T();
+		eidx = dec_mod(eidx);
 	}
 
 	void push_front(const T& elem) {
 		allocIfNull();
 		
-		if (!remaining_front()) {
-			fcap*=2;
+		if (!empty_spots()) {
+			T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
 
-			T* array_front_new=new T[fcap];
-
-			for (uint64_t i=0; i <= fidx; i++) {
-				array_front_new[i]=this->array_front[i];
+			for (uint64_t i = 0; i < capacity; i++) {
+				new_data[i] = data[(fidx + i)%capacity]; // ????
 			}
 
-			destroy_front();
-			this->array_front=array_front_new;
+			fidx=0;
+			eidx=capacity-1;
+			capacity += unit;
+			unit *= 2;
+
+			destroy();
+			this->data=new_data;
 		}
 
-		this->array_front[++fidx]=T{elem};
+		this->data[fidx]=T{elem};
+		fidx = dec_mod(fidx);
 	}
 
-
-	void print(void) {
-		for (uint64_t i=fidx; i != 0; i-=1) {
-			cout << array_front[i] << " ";
+	void pop_front(void) {
+		// If array is empty.
+		if (!size()) {
+			throw std::out_of_range("subscript out of range");
 		}
 
-		for (uint64_t i=1; i<=bidx; i+=1) {
-			cout << array_back[i] << " ";
+		fidx = inc_mod(fidx);
+		this->data[fidx].~T();
+	}
+
+	void print(void) {
+		for (uint64_t i = inc_mod(fidx); i != inc_mod(eidx); i=inc_mod(i)) {
+			cout << data[i] << " ";
 		}
 
 		cout << "\n";
