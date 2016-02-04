@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <iostream>
 
-#define INITIAL_UNIT 8
+#define INITIAL_UNIT 16
 
 using std::cout;
 
@@ -24,7 +24,7 @@ private:
 
 	void init(void) {
 		data = nullptr;
-		capacity = INITIAL_UNIT; // ????
+		capacity = INITIAL_UNIT;
 		fidx = eidx = 0;
 		unit = INITIAL_UNIT;
 	}
@@ -44,19 +44,20 @@ private:
 		data = (T*) ::operator new(capacity * sizeof(T));
 		
 		for (uint64_t i = 0; i < size(); i++) {
-			data[(fidx+1+i) % capacity] = that.data[(fidx+1+i) % capacity];
+			new (&data[inc_mod(fidx+i)]) T{that.data[inc_mod(fidx+i)]};
 		}
 	}
 
 	void destroy(void) {
 		if (data) {
+			int cnt = 0;
 			for (uint64_t i = 0; i < size(); i++) {
-				data[(fidx+1+i) % capacity].~T();
+				cnt++;
+				data[inc_mod(fidx+i)].~T();
 			}
 
 			::operator delete(data); // deallocate memory (no destructors) 
 		}
-		// why can't we use delete[]?
 	}
 
 	void allocIfNull(void) {
@@ -71,16 +72,14 @@ private:
 	}
 
 	uint64_t inc_mod(uint64_t i) const {
-		return modulo(i+1, capacity);
+		return (i + 1) % capacity;
 	}
 
 	uint64_t dec_mod(uint64_t i) const {
-		return modulo(i-1, capacity);
-	}
-
-	int modulo(int i, int n) const {
-	  const int k = i % n;
-	  return k < 0 ? k + n : k;
+		if (!i) {
+			return capacity-1;
+		}
+		return (i - 1) % capacity;
 	}
 
 public:
@@ -99,7 +98,7 @@ public:
 		if (!size) {
 			init();
 		} else {
-			data = new T [size]; // (T*) ::operator new(size * sizeof(T));
+			data = new T [size];
 			fidx = eidx = 0;
 			capacity = size;
 			unit = INITIAL_UNIT;
@@ -111,7 +110,7 @@ public:
 		copy(that);
 	}
 
-	vector& operator=(vector const& rhs) {
+	vector<T>& operator=(vector const& rhs) {
 		if (this != &rhs) {
 			destroy();
 			copy(rhs);
@@ -121,6 +120,7 @@ public:
 	}
 
 	uint64_t size(void) const {
+
 		if (eidx >= fidx) {
 			return eidx - fidx;
 		}
@@ -133,7 +133,7 @@ public:
 			throw std::out_of_range("subscript out of range");
 		}
 
-		return data[(fidx + 1 + k) % capacity];
+		return data[inc_mod(fidx+k)];
 	}
 
 	const T& operator[](uint64_t k) const {
@@ -141,7 +141,7 @@ public:
 			throw std::out_of_range("subscript out of range");
 		}
 
-		return data[(fidx + 1 + k) % capacity];
+		return data[inc_mod(fidx+k)];
 	}
 
 	void push_back(const T& elem) {
@@ -151,8 +151,8 @@ public:
 		if (!empty_spots()) {
 			T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
 
-			for (uint64_t i = 0; i < capacity; i++) {
-				new_data[i] = data[(fidx + i)%capacity]; // ????
+			for (uint64_t i = 0; i < size(); i++) {
+				new (&new_data[i+1]) T{data[inc_mod(fidx+i)]};
 			}
 
 			fidx=0;
@@ -164,10 +164,9 @@ public:
 			this->data=new_data;
 		}
 
-		//T newElem{elem}; // Calling T's copy constructor???
-
 		eidx = inc_mod(eidx);
-		this->data[eidx]=T{elem};
+
+		new (&this->data[eidx]) T{elem};
 	}
 
 	void pop_back(void) {
@@ -186,8 +185,8 @@ public:
 		if (!empty_spots()) {
 			T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
 
-			for (uint64_t i = 0; i < capacity; i++) {
-				new_data[i] = data[(fidx + i)%capacity]; // ????
+			for (uint64_t i = 0; i < size(); i++) {
+				new (&new_data[i+1]) T{data[inc_mod(fidx+i)]}; // ????
 			}
 
 			fidx=0;
@@ -199,7 +198,8 @@ public:
 			this->data=new_data;
 		}
 
-		this->data[fidx]=T{elem};
+		new (&this->data[fidx]) T{elem};
+
 		fidx = dec_mod(fidx);
 	}
 

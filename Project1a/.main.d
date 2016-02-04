@@ -1,1 +1,1 @@
-main.o: main.cpp Vector.h
+main.o: main.cpp Vector.h B.h

@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <ctime>
 #include "Vector.h"
+#include "B.h"
 
 using std::cout;
 using std::endl;
@@ -43,12 +44,10 @@ void test0_extreme(void) {
 	vector<int> v;
 	std::vector<int> std_v;
 
-  	srand (time(NULL));
-
 	for (int i=0; i < LARGE; i++) {
-		int num=rand() % 10;
-		v.push_back(num);
-		std_v.push_back(num);
+		// int num=rand() % 10;
+		v.push_back(i);
+		std_v.push_back(i);
 
 		if (v[i] != std_v[i]) {
 			throw exception("test0_extreme failed on []!");
@@ -88,13 +87,9 @@ void test1_extreme(void) {
 	vector<int> v;
 	std::vector<int> std_v;
 
-  	srand (time(NULL));
-
 	for (int i=0; i < LARGE; i++) {
-		int num=rand() % 10;
-
-		v.push_front(num);
-		std_v.insert(std_v.begin(), num);
+		v.push_front(i);
+		std_v.insert(std_v.begin(), i);
 
 		if (v[i] != std_v[i]) {
 			throw exception("test1_extreme failed on []!");
@@ -147,18 +142,12 @@ void test2_extreme(void) {
 	vector<int> v;
 	std::vector<int> std_v;
 
-	srand (time(NULL));
-
 	for (int i=0; i < LARGE; i++) {
-		int num=rand() % 10;
+		v.push_front(i);
+		std_v.insert(std_v.begin(), i);
 
-		v.push_front(num);
-		std_v.insert(std_v.begin(), num);
-
-		num=rand() % 10;
-
-		std_v.push_back(num);
-		v.push_back(num);
+		std_v.push_back(i);
+		v.push_back(i);
 
 		if (v[i] != std_v[i]) {
 			throw exception("test2_extreme failed on []!");
@@ -299,9 +288,9 @@ void test7(void) {
 
 	std::string base="c";
 
-	for (int i = 0; i < 1; i++) {
+	for (int i = 0; i < LARGE; i++) {
 		std::string cur=base + std::to_string(i);
-		cout << "HHHH: " << cur << "\n";
+		// cout << "HHHH: " << cur << "\n";
 		v.push_back(cur);
 		// std_v.push_back(cur);
 
@@ -315,8 +304,48 @@ void test7(void) {
 	}*/
 }
 
+void test8(void) {
+	vector<B> v;
+
+	B b;
+	cout << "{\n";
+	v.push_back(b);
+	cout << "}\n";
+}
+
+void test9(void) {
+	vector<vector<int>> super;
+	// std::vector<std::string> std_v;
+
+	std::vector<std::vector<int>> std_super;
+
+	for (int i = 0; i < LARGE; i++) {
+		vector<int> sub;
+		std::vector<int> std_sub;
+
+		for (int j = 0; j < MEDIUM; j++) {
+			sub.push_back(j);
+			std_sub.push_back(j);
+		}
+
+		super.push_back(sub);
+		std_super.push_back(std_sub);
+		// cout << "HHHH: " << cur << "\n";
+		// v.push_back(cur);
+		// std_v.push_back(cur);
+
+		/*if (v[i] != std_v[i]) {
+			throw exception("test7 failed in test7 on []!");
+		}*/
+	}
+
+	if (super.size() != std_super.size()) {
+		throw exception("test7 failed in test7 on size!");
+	}
+}
+
 int main(void) {
-	/*try {
+	try {
 		test0();
 	} catch(exception e) {
 		cout << e.wtf() << std::endl;
@@ -326,7 +355,7 @@ int main(void) {
 		test0_extreme();
 	} catch(exception e) {
 		cout << e.wtf() << std::endl;
-	}
+	} 
 
 	try {
 		test1();
@@ -374,13 +403,25 @@ int main(void) {
 		test6();
 	} catch(exception e) {
 		cout << e.wtf() << std::endl;
-	}*/
-
-	//try {
-		 test7();
-	/*} catch(exception e) {
+	}
+	
+	try {
+		test7();
+	} catch(exception e) {
 		cout << e.wtf() << std::endl;
-	}*/
+	}
+
+	try {
+		test8();
+	} catch(exception e) {
+		cout << e.wtf() << std::endl;
+	}
+
+	try {
+		test9();
+	} catch(exception e) {
+		cout << e.wtf() << std::endl;
+	}
 
 	return 0;
 }
