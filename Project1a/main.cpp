@@ -10,7 +10,8 @@ using std::endl;
 using namespace epl;
 
 #define UNIT 8
-#define LARGE 50000
+#define MEDIUM 100
+#define LARGE 5000
 
 class exception {
 	public:
@@ -292,8 +293,30 @@ void test6(void) {
 	foo(v4, std_v, "test6 failed in foo 4!");
 }
 
+void test7(void) {
+	vector<std::string> v;
+	std::vector<std::string> std_v;
+
+	std::string base="c";
+
+	for (int i = 0; i < 1; i++) {
+		std::string cur=base + std::to_string(i);
+		cout << "HHHH: " << cur << "\n";
+		v.push_back(cur);
+		// std_v.push_back(cur);
+
+		/*if (v[i] != std_v[i]) {
+			throw exception("test7 failed in test7 on []!");
+		}*/
+	}
+
+	/*if (v.size() != std_v.size()) {
+		throw exception("test7 failed in test7 on size!");
+	}*/
+}
+
 int main(void) {
-	try {
+	/*try {
 		test0();
 	} catch(exception e) {
 		cout << e.wtf() << std::endl;
@@ -351,7 +374,13 @@ int main(void) {
 		test6();
 	} catch(exception e) {
 		cout << e.wtf() << std::endl;
-	}
+	}*/
+
+	//try {
+		 test7();
+	/*} catch(exception e) {
+		cout << e.wtf() << std::endl;
+	}*/
 
 	return 0;
 }
