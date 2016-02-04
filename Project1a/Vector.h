@@ -1,5 +1,3 @@
-// Vector.h -- header file for Vector data structure project
-
 #pragma once
 #ifndef _Vector_h
 #define _Vector_h
@@ -7,7 +5,7 @@
 #include <cstdint>
 #include <iostream>
 
-#define INITIAL_UNIT 16
+#define INITIAL_UNIT 8
 
 using std::cout;
 

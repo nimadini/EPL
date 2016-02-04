@@ -290,33 +290,19 @@ void test7(void) {
 
 	for (int i = 0; i < LARGE; i++) {
 		std::string cur=base + std::to_string(i);
-		// cout << "HHHH: " << cur << "\n";
 		v.push_back(cur);
-		// std_v.push_back(cur);
-
-		/*if (v[i] != std_v[i]) {
-			throw exception("test7 failed in test7 on []!");
-		}*/
+		std_v.push_back(cur);
 	}
 
-	/*if (v.size() != std_v.size()) {
-		throw exception("test7 failed in test7 on size!");
-	}*/
+	for (int i = 0; i < LARGE; i++) {
+		if (v[i] != std_v[i]) {
+			throw exception("test7 failed on [] 1!");
+		}
+	}
 }
 
 void test8(void) {
-	vector<B> v;
-
-	B b;
-	cout << "{\n";
-	v.push_back(b);
-	cout << "}\n";
-}
-
-void test9(void) {
 	vector<vector<int>> super;
-	// std::vector<std::string> std_v;
-
 	std::vector<std::vector<int>> std_super;
 
 	for (int i = 0; i < LARGE; i++) {
@@ -326,22 +312,36 @@ void test9(void) {
 		for (int j = 0; j < MEDIUM; j++) {
 			sub.push_back(j);
 			std_sub.push_back(j);
+
+			if (sub[j] != std_sub[j]) {
+				throw exception("test8 failed on [] 1!");
+			}
 		}
 
 		super.push_back(sub);
 		std_super.push_back(std_sub);
-		// cout << "HHHH: " << cur << "\n";
-		// v.push_back(cur);
-		// std_v.push_back(cur);
+	}
 
-		/*if (v[i] != std_v[i]) {
-			throw exception("test7 failed in test7 on []!");
-		}*/
+	for (int i = 0; i < LARGE; i++) {
+		for (int j = 0; j < MEDIUM; j++) {
+			if (super[i][j] != std_super[i][j]) {
+				throw exception("test8 failed on [] 2!");
+			}
+		}
 	}
 
 	if (super.size() != std_super.size()) {
-		throw exception("test7 failed in test7 on size!");
+		throw exception("test8 failed on size!");
 	}
+}
+
+void test9(void) {
+	vector<B> v;
+
+	B b;
+	// cout << "{\n";
+	v.push_back(b);
+	// cout << "}\n";
 }
 
 int main(void) {
