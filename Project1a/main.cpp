@@ -1,8 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <cstdlib>
-#include <ctime>
 #include "Vector.h"
 #include "B.h"
 
@@ -45,7 +43,6 @@ void test0_extreme(void) {
 	std::vector<int> std_v;
 
 	for (int i=0; i < LARGE; i++) {
-		// int num=rand() % 10;
 		v.push_back(i);
 		std_v.push_back(i);
 
