@@ -6,7 +6,7 @@
 #include "Vector.h"
 #include "B.h"
 
-using std::cout;
+using std::cerr;
 using std::endl;
 using namespace epl;
 
@@ -301,7 +301,7 @@ void test7(void) {
 	}
 }
 
-void test8(void) {
+void test8_A(void) {
 	vector<vector<int>> super;
 	std::vector<std::vector<int>> std_super;
 
@@ -335,13 +335,49 @@ void test8(void) {
 	}
 }
 
+void test8_B(void) {
+	vector<vector<int>> super;
+	std::vector<std::vector<int>> std_super;
+
+	for (int i = 0; i < LARGE; i++) {
+		vector<int> sub;
+		std::vector<int> std_sub;
+
+		for (int j = 0; j < MEDIUM; j++) {
+			sub.push_back(j);
+			std_sub.push_back(j);
+
+			if (sub[j] != std_sub[j]) {
+				throw exception("test8 failed on [] 1!");
+			}
+		}
+
+		super.push_back(sub);
+		std_super.push_back(std_sub);
+	}
+
+	vector<vector<int>> super2 = super;
+
+	for (int i = 0; i < LARGE; i++) {
+		for (int j = 0; j < MEDIUM; j++) {
+			if (super2[i][j] != std_super[i][j]) {
+				throw exception("test8 failed on [] 2!");
+			}
+		}
+	}
+
+	if (super2.size() != std_super.size()) {
+		throw exception("test8 failed on size!");
+	}
+}
+
 void test9(void) {
 	vector<B> v;
 
 	B b;
-	// cout << "{\n";
+	// cerr << "{\n";
 	v.push_back(b);
-	// cout << "}\n";
+	// cerr << "}\n";
 }
 
 void test10_A(void) {
@@ -405,108 +441,144 @@ void test11(void) {
 	}
 }
 
+void test12_A(void) {
+	vector<int> v(4);
+	vector<int> v2 = v;
+
+	if (v.size() != 4 || v.size() != v2.size()) {
+		throw exception("test11 failed on []!");
+	}
+}
+
+void test12_B(void) {
+	vector<int> v(0);
+	v[0];
+}
+
+void test12_C(void) {
+	vector<int> v;
+	v[0];
+}
+
 int main(void) {
 	try {
 		test0();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
 
 	try {
 		test0_extreme();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	} 
 
 	try {
 		test1();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
 
 	try {
 		test1_extreme();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
 
 	try {
 		test2();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
 
 	try {
 		test2_extreme();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
 
 	try {
 		test3();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
 
 	try {
 		test4();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
 
 	try {
 		test5();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
 
 	try {
 		test6();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
 	
 	try {
 		test7();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
 
 	try {
-		test8();
+		test8_A();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
+	}
+
+	try {
+		test8_B();
+	} catch(exception e) {
+		cerr << e.wtf() << std::endl;
 	}
 
 	try {
 		test9();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
 
 	try {
 		test10_A();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
 
 	try {
 		test10_B();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
 
 	try {
 		test10_C();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
 
 	try {
 		test11();
 	} catch(exception e) {
-		cout << e.wtf() << std::endl;
+		cerr << e.wtf() << std::endl;
 	}
+
+	try {
+		test12_A();
+	} catch(exception e) {
+		cerr << e.wtf() << std::endl;
+	}
+
+	try {
+		test12_B();
+		cerr << "failed in 12 :: not throwing an expected exception! (out_of_range)\n";
+	} catch(std::out_of_range e) {}
 
 	return 0;
 }
