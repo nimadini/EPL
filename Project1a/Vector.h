@@ -96,9 +96,15 @@ public:
 		if (!size) {
 			init();
 		} else {
-			data = new T [size];
-			fidx = eidx = 0;
-			capacity = size;
+			data = (T*) ::operator new((size+1) * sizeof(T));
+			
+			for (uint64_t i=1; i < size+1; i++) {
+				new (&data[i]) T{};
+			}
+
+			fidx = 0;
+			eidx = size;
+			capacity = size+1;
 			unit = INITIAL_UNIT;
 		}
 	}

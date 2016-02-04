@@ -182,7 +182,7 @@ void test3(void) {
 }
 
 void test4(void) {
-	vector<int> v(4);
+	vector<int> v;
 
 	for (int i=0; i < LARGE; i++) {
 		v.push_back(i);
@@ -344,6 +344,67 @@ void test9(void) {
 	// cout << "}\n";
 }
 
+void test10_A(void) {
+	vector<int> v(1);
+
+	v.push_back(0);
+	v.pop_front();
+
+	if (v.size() != 1) {
+		throw exception("test10_A failed on size!");
+	}
+}
+
+void test10_B(void) {
+	vector<int> v(1);
+
+	for (int i = 0; i < LARGE; i++) {
+		v.push_back(i);
+	}
+
+	if (v.size() != LARGE+1) {
+		throw exception("test10_B failed on size 1!");
+	}
+
+	v.pop_front();
+	v.pop_back();
+
+	if (v.size() != LARGE-1) {
+		throw exception("test10_B failed on size 2!");
+	}
+}
+
+void test10_C(void) {
+	vector<int> v(UNIT);
+
+	for (int i = 0; i < UNIT; i++) {
+		v.push_front(i);
+	}
+
+	if (v.size() != UNIT*2) {
+		throw exception("test10_C failed on size 1!");
+	}
+
+	for (int i = 0; i < UNIT; i++) {
+		v.pop_back();
+		v.pop_front();
+	}
+
+	if (v.size() != 0) {
+		throw exception("test10_C failed on size 2!");
+	}
+}
+
+void test11(void) {
+	vector<int> v(10);
+
+	for (int i=0; i < 10; i++) {
+		if (v[i] != 0) {
+			throw exception("test11 failed on []!");
+		}
+	}
+}
+
 int main(void) {
 	try {
 		test0();
@@ -419,6 +480,30 @@ int main(void) {
 
 	try {
 		test9();
+	} catch(exception e) {
+		cout << e.wtf() << std::endl;
+	}
+
+	try {
+		test10_A();
+	} catch(exception e) {
+		cout << e.wtf() << std::endl;
+	}
+
+	try {
+		test10_B();
+	} catch(exception e) {
+		cout << e.wtf() << std::endl;
+	}
+
+	try {
+		test10_C();
+	} catch(exception e) {
+		cout << e.wtf() << std::endl;
+	}
+
+	try {
+		test11();
 	} catch(exception e) {
 		cout << e.wtf() << std::endl;
 	}
