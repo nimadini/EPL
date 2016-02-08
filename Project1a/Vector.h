@@ -46,6 +46,17 @@ private:
 		}
 	}
 
+	void my_move(vector&& tmp) {
+		// cout << "move!\n";
+
+		this->data = tmp.data;
+		this->capacity = tmp.capacity;
+		this->fidx = tmp.fidx;
+		this->eidx = tmp.eidx;
+		this->unit = tmp.unit;
+		tmp.data = nullptr;
+	}
+
 	void destroy(void) {
 		if (data) {
 			int cnt = 0;
@@ -56,6 +67,22 @@ private:
 
 			::operator delete(data); // deallocate memory (no destructors) 
 		}
+	}
+
+	void resize(void) {
+		T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
+
+		for (uint64_t i = 0; i < size(); i++) {
+			new (&new_data[i+1]) T{std::move(data[inc_mod(fidx+i)])};
+		}
+
+		fidx=0;
+		eidx=capacity-1;
+		capacity += unit;
+		unit *= 2;
+
+		destroy();
+		this->data=new_data;
 	}
 
 	void allocIfNull(void) {
@@ -114,11 +141,26 @@ public:
 		copy(that);
 	}
 
+	vector(vector&& tmp) {
+		my_move(std::move(tmp));
+	}
+
 	vector<T>& operator=(vector const& rhs) {
 		if (this != &rhs) {
 			destroy();
 			copy(rhs);
 		}
+
+		return *this;
+	}
+
+	vector<T>& operator=(vector&& rhs) {
+		std::swap(this->data, rhs.data);
+
+		this->capacity = rhs.capacity;
+		this->fidx = rhs.fidx;
+		this->eidx = rhs.eidx;
+		this->unit = rhs.unit;
 
 		return *this;
 	}
@@ -153,24 +195,24 @@ public:
 
 		// If there is no empty spot.
 		if (!empty_spots()) {
-			T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
-
-			for (uint64_t i = 0; i < size(); i++) {
-				new (&new_data[i+1]) T{data[inc_mod(fidx+i)]};
-			}
-
-			fidx=0;
-			eidx=capacity-1;
-			capacity += unit;
-			unit *= 2;
-
-			destroy();
-			this->data=new_data;
+			resize();
 		}
 
 		eidx = inc_mod(eidx);
 
 		new (&this->data[eidx]) T{elem};
+	}
+
+	void push_back(T&& elem) {
+		allocIfNull();
+
+		// If there is no empty spot.
+		if (!empty_spots()) {
+			resize();
+		}
+
+		eidx = inc_mod(eidx);
+		new (&this->data[eidx]) T{std::move(elem)};
 	}
 
 	void pop_back(void) {
@@ -187,22 +229,22 @@ public:
 		allocIfNull();
 		
 		if (!empty_spots()) {
-			T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
-
-			for (uint64_t i = 0; i < size(); i++) {
-				new (&new_data[i+1]) T{data[inc_mod(fidx+i)]}; // ????
-			}
-
-			fidx=0;
-			eidx=capacity-1;
-			capacity += unit;
-			unit *= 2;
-
-			destroy();
-			this->data=new_data;
+			resize();
 		}
 
 		new (&this->data[fidx]) T{elem};
+
+		fidx = dec_mod(fidx);
+	}
+
+	void push_front(T&& elem) {
+		allocIfNull();
+		
+		if (!empty_spots()) {
+			resize();
+		}
+
+		new (&this->data[fidx]) T{std::move(elem)};
 
 		fidx = dec_mod(fidx);
 	}

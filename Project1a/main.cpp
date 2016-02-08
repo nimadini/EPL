@@ -6,6 +6,7 @@
 
 using std::cerr;
 using std::endl;
+using std::string;
 using namespace epl;
 
 #define UNIT 8
@@ -20,6 +21,9 @@ class exception {
 		std::string msg;
 };
 
+/**
+ Testing push_back for values & size()
+*/
 void test0(void) {
 	vector<int> v;
 	std::vector<int> std_v;
@@ -38,6 +42,9 @@ void test0(void) {
 	}
 }
 
+/**
+ Tests push_back for values & size() for HUGE # of elements
+*/
 void test0_extreme(void) {
 	vector<int> v;
 	std::vector<int> std_v;
@@ -56,6 +63,9 @@ void test0_extreme(void) {
 	}
 }
 
+/**
+ Tests push_front for values & size()
+*/
 void test1(void) {
 	vector<int> v;
 	std::vector<int> std_v;
@@ -80,6 +90,9 @@ void test1(void) {
 	}
 }
 
+/**
+Tests push_front for values & size()
+*/
 void test1_extreme(void) {
 	vector<int> v;
 	std::vector<int> std_v;
@@ -108,6 +121,9 @@ void test1_extreme(void) {
 	}
 }
 
+/**
+ Tests alternating push_front & push_back for values & size()
+*/
 void test2(void) {
 	vector<int> v;
 	std::vector<int> std_v;
@@ -135,6 +151,9 @@ void test2(void) {
 	}
 }
 
+/**
+ Tests alternating push_front & push_back for values & size() for HUGE sizes
+*/
 void test2_extreme(void) {
 	vector<int> v;
 	std::vector<int> std_v;
@@ -158,6 +177,9 @@ void test2_extreme(void) {
 	}
 }
 
+/**
+ Test growing size w/ push_back and pop_front to get to size 0
+*/
 void test3(void) {
 	vector<int> v;
 
@@ -178,11 +200,14 @@ void test3(void) {
 	}
 }
 
+/**
+ Test growing size w/ push_front and pop_back to get to size 0
+*/
 void test4(void) {
 	vector<int> v;
 
 	for (int i=0; i < LARGE; i++) {
-		v.push_back(i);
+		v.push_front(i);
 
 		if (v.size() != i+1) {
 			throw exception("test4 failed on size 1!");
@@ -190,7 +215,7 @@ void test4(void) {
 	}
 
 	for (int i=0; i < LARGE; i++) {
-		v.pop_front();
+		v.pop_back();
 	}
 
 	if (v.size() != 0) {
@@ -207,6 +232,9 @@ void foo(vector<int> v, std::vector<int> std_v, std::string msg) {
 	}
 }
 
+/**
+ Tests push & pop for front & back looking at values
+*/
 void test5(void) {
 	vector<int> v;
 	std::vector<int> std_v;
@@ -240,6 +268,9 @@ void test5(void) {
 	foo(v, std_v, "test5 failed in foo 4!");
 }
 
+/**
+ Tests assignment operator
+*/
 void test6(void) {
 	vector<int> v;
 	std::vector<int> std_v;
@@ -279,6 +310,9 @@ void test6(void) {
 	foo(v4, std_v, "test6 failed in foo 4!");
 }
 
+/**
+ Tests vector with non-pod, string
+*/
 void test7(void) {
 	vector<std::string> v;
 	std::vector<std::string> std_v;
@@ -298,6 +332,9 @@ void test7(void) {
 	}
 }
 
+/**
+ Tests vector<vector<int>>
+*/
 void test8_A(void) {
 	vector<vector<int>> super;
 	std::vector<std::vector<int>> std_super;
@@ -332,6 +369,9 @@ void test8_A(void) {
 	}
 }
 
+/**
+ Tests vector<vector<int>> assignment operator
+*/
 void test8_B(void) {
 	vector<vector<int>> super;
 	std::vector<std::vector<int>> std_super;
@@ -368,6 +408,9 @@ void test8_B(void) {
 	}
 }
 
+/**
+ Tests something non-POD?
+*/
 void test9(void) {
 	vector<B> v;
 
@@ -377,6 +420,9 @@ void test9(void) {
 	// cerr << "}\n";
 }
 
+/**
+ Tests supplied capacity w/ size()
+*/
 void test10_A(void) {
 	vector<int> v(1);
 
@@ -388,6 +434,9 @@ void test10_A(void) {
 	}
 }
 
+/**
+ Tests supplied capacity w/ size() large
+*/
 void test10_B(void) {
 	vector<int> v(1);
 
@@ -407,6 +456,9 @@ void test10_B(void) {
 	}
 }
 
+/**
+Tests supplied capacity w/ size() grow & shrink to nothing
+*/
 void test10_C(void) {
 	vector<int> v(UNIT);
 
@@ -428,6 +480,9 @@ void test10_C(void) {
 	}
 }
 
+/**
+ Tests supplied constructor w/ default values
+*/
 void test11(void) {
 	vector<int> v(10);
 
@@ -438,23 +493,60 @@ void test11(void) {
 	}
 }
 
+/**
+ Test supplied constructor w/ assignment operator for size
+*/
 void test12_A(void) {
 	vector<int> v(4);
 	vector<int> v2 = v;
 
 	if (v.size() != 4 || v.size() != v2.size()) {
-		throw exception("test11 failed on []!");
+		throw exception("test11 failed on size stuff!");
 	}
 }
 
+/**
+ Tests out of range exception
+*/
 void test12_B(void) {
-	vector<int> v(0);
+	vector<int> v;
 	v[0];
 }
 
+/**
+ Tests deep copy assignment & constructor
+*/
 void test12_C(void) {
-	vector<int> v;
-	v[0];
+	vector<string> v1{4};
+	v1[0] = "A";
+	v1[1] = "B";
+	v1[2] = "C";
+	v1[3] = "D";
+
+	vector<string> v2 = v1;
+
+	v2[0] = "Z";
+
+	if (v1[0] == "Z")
+	{
+		throw exception("test12_C failed on copy assignment!");
+	}
+
+	vector<string> v3{ v1 };
+	v3[0] = "Y";
+	if (v1[0] == "Y")
+	{
+		throw exception("test12_C failed on copy constructor!");
+	}
+}
+
+void test13(void)
+{
+	const vector<int> x{5};
+	if (x[2] != 0)
+	{
+		throw exception("test13 failed on const []!");
+	}
 }
 
 int main(void) {
@@ -576,6 +668,20 @@ int main(void) {
 		test12_B();
 		cerr << "failed in 12 :: not throwing an expected exception! (out_of_range)\n";
 	} catch(std::out_of_range e) {}
+
+	try {
+		test12_C();
+	}
+	catch (exception e) {
+		cerr << e.wtf() << std::endl;
+	}
+
+	try {
+		test13();
+	}
+	catch (exception e) {
+		cerr << e.wtf() << std::endl;
+	}
 
 	return 0;
 }
