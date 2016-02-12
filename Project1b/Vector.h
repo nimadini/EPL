@@ -84,6 +84,51 @@ private:
 		}
 	}
 
+	void add_back_resize(const T& elem) {
+		T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
+
+		// we should copy the elem 1st before moving the old_data to new_data,
+		// because if elem is part of the given vector, the address may change
+		// and result in wrong array. Another alternative is to taking a tmp
+		// var and copy construct the elem into it and then after resizing (and copying)
+		// is done, move it to the appropriate place. however, the approach implemented
+		// here has one move less overhead.
+
+		// copy construct the elem first, before moving elems to the new array.
+		new (&new_data[capacity]) T{elem}; 
+
+		for (uint64_t i = 0; i < size(); i++) {
+			new (&new_data[i+1]) T{std::move(data[inc_mod(fidx+i)])};
+		}
+
+		destroy();
+
+		fidx = 0;
+		eidx = capacity;
+		capacity += unit;
+		unit *= 2;
+		data = new_data;
+	}
+
+	void add_front_resize(const T& elem) {
+		T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
+	
+		// copy construct the elem first, before moving elems to the new array.
+		new (&new_data[1]) T{elem};
+
+		for (uint64_t i = 0; i < size(); i++) {
+			new (&new_data[i+2]) T{std::move(data[inc_mod(fidx+i)])};
+		}
+
+		destroy();
+
+		fidx = 0;
+		eidx = capacity;
+		capacity += unit;
+		unit *= 2;
+		data = new_data;
+	}
+
 	// resizing logc
 	void resize(void) {
 		T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
@@ -213,18 +258,12 @@ public:
 	void push_back(const T& elem) {
 		allocIfNull();
 
-		// if resize happens, the address of elem may be different, like:
-		// x = vector<vector<int>> and x.push_back(x[0])!
-		T copied_elem{elem}; 
-
-		// If there is no empty spot.
 		if (!empty_spots()) {
-			resize();
+			add_back_resize(elem);
+		} else {
+			eidx = inc_mod(eidx);
+			new (&this->data[eidx]) T{elem};
 		}
-
-		eidx = inc_mod(eidx);
-
-		new (&this->data[eidx]) T{std::move(copied_elem)};
 	}
 
 	void push_back(T&& elem) {
@@ -251,19 +290,17 @@ public:
 
 	void push_front(const T& elem) {
 		allocIfNull();
-
-		T copied_elem{elem};
 		
 		if (!empty_spots()) {
-			resize();
+			add_front_resize(elem);
+		} else {
+			new (&this->data[fidx]) T{elem};
+			fidx = dec_mod(fidx);
 		}
-
-		new (&this->data[fidx]) T{copied_elem};
-
-		fidx = dec_mod(fidx);
 	}
 
 	void push_front(T&& elem) {
+		std::cout << "**in move push_front\n";
 		allocIfNull();
 		
 		if (!empty_spots()) {

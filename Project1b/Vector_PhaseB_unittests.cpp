@@ -91,8 +91,28 @@ TEST(PhaseB1, ReallocCopy)
     Foo::reset();
     {
         vector<vector<Foo>> x(8);
+        std::cout << "**before\n";
         x[0].push_front(Foo()); //1 alive Foo
         x.push_back(x[0]); //1 copy, 2 alive Foo
+    } //ensures x is destroyed
+
+    EXPECT_EQ(1, Foo::constructions);
+    EXPECT_EQ(2, Foo::destructions);
+    EXPECT_EQ(1, Foo::copies);
+    EXPECT_GE(2, Foo::moves);
+}
+#endif
+
+
+#if defined(PHASE_B3_0) | defined(PHASE_B)
+TEST(PhaseB1, ReallocCopy2)
+{
+    Foo::reset();
+    {
+        vector<vector<Foo>> x(8);
+        std::cout << "**3_before\n";
+        x[0].push_back(Foo()); //1 alive Foo
+        x.push_front(x[0]); //1 copy, 2 alive Foo
     } //ensures x is destroyed
 
     EXPECT_EQ(1, Foo::constructions);
