@@ -1,4 +1,4 @@
-GTEST_DIR = ../../../gtest
+GTEST_DIR = ../gtest
 GTEST_INC = $(GTEST_DIR)/include
 
 #choose based on system
