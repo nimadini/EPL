@@ -14,12 +14,19 @@ namespace epl {
 template <typename T>
 class vector {
 private:
-	T* data;
-	uint64_t capacity;
-	uint64_t fidx;
-	uint64_t eidx;
-	uint64_t unit;
+	T* data; 			// contains the elements of the vector (it's a circular array)
+						// if fidx == eidx: array is empty
+						// else if (eidx + 1) % capacity == fidx: array is full
+						// so we have one redundant spot in the array to distinguish between
+						// the given 2 scenarios
 
+	uint64_t capacity; 	// the capacity
+	uint64_t fidx; 		// front index
+	uint64_t eidx; 		// end index
+	uint64_t unit;		// unit for dynamic doubling
+
+	// init a vector: data would be null, fidx
+	// and eidx both point to the 1st elem
 	void init(void) {
 		data = nullptr;
 		capacity = INITIAL_UNIT;
@@ -27,12 +34,14 @@ private:
 		unit = INITIAL_UNIT;
 	}
 
+	// copy constructor logic
 	void copy(vector const & that) {
 		fidx = that.fidx;
 		eidx = that.eidx;
 		capacity = that.capacity;
-		unit = that.unit; // TODO: think more...
+		unit = that.unit;
 
+		// if "that" has no data
 		if (!that.data) {
 			data = nullptr;
 			return;
@@ -41,34 +50,86 @@ private:
 		// allocate mem but don't initialize it. 
 		data = (T*) ::operator new(capacity * sizeof(T));
 		
+		// do the copy one-by-one by calling T{elem}, i.e., copy constructor of T
 		for (uint64_t i = 0; i < size(); i++) {
 			new (&data[inc_mod(fidx+i)]) T{that.data[inc_mod(fidx+i)]};
 		}
 	}
 
+	// move constructor logic
 	void my_move(vector&& tmp) {
-		// cout << "move!\n";
-
 		this->data = tmp.data;
 		this->capacity = tmp.capacity;
 		this->fidx = tmp.fidx;
 		this->eidx = tmp.eidx;
 		this->unit = tmp.unit;
-		tmp.data = nullptr;
+
+		// make the destruction of tmp harmless
+		// since now both this->data and tmp.data
+		// point to the same location
+		tmp.data = nullptr; 
 	}
 
+	// destructor logic
 	void destroy(void) {
+		// if data is not nullptr
 		if (data) {
-			int cnt = 0;
+			// destroy each elem individually
 			for (uint64_t i = 0; i < size(); i++) {
-				cnt++;
 				data[inc_mod(fidx+i)].~T();
 			}
 
-			::operator delete(data); // deallocate memory (no destructors) 
+			// free the allocated space (no destructors)
+			::operator delete(data); 
 		}
 	}
 
+	void add_back_resize(const T& elem) {
+		T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
+
+		// we should copy the elem 1st before moving the old_data to new_data,
+		// because if elem is part of the given vector, the address may change
+		// and result in wrong array. Another alternative is to taking a tmp
+		// var and copy construct the elem into it and then after resizing (and copying)
+		// is done, move it to the appropriate place. however, the approach implemented
+		// here has one move less overhead.
+
+		// copy construct the elem first, before moving elems to the new array.
+		new (&new_data[capacity]) T{elem}; 
+
+		for (uint64_t i = 0; i < size(); i++) {
+			new (&new_data[i+1]) T{std::move(data[inc_mod(fidx+i)])};
+		}
+
+		destroy();
+
+		fidx = 0;
+		eidx = capacity;
+		capacity += unit;
+		unit *= 2;
+		data = new_data;
+	}
+
+	void add_front_resize(const T& elem) {
+		T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
+	
+		// copy construct the elem first, before moving elems to the new array.
+		new (&new_data[1]) T{elem};
+
+		for (uint64_t i = 0; i < size(); i++) {
+			new (&new_data[i+2]) T{std::move(data[inc_mod(fidx+i)])};
+		}
+
+		destroy();
+
+		fidx = 0;
+		eidx = capacity;
+		capacity += unit;
+		unit *= 2;
+		data = new_data;
+	}
+
+	// resizing logc
 	void resize(void) {
 		T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
 
@@ -76,12 +137,13 @@ private:
 			new (&new_data[i+1]) T{std::move(data[inc_mod(fidx+i)])};
 		}
 
+		destroy();
+
 		fidx=0;
 		eidx=capacity-1;
 		capacity += unit;
 		unit *= 2;
 
-		destroy();
 		this->data=new_data;
 	}
 
@@ -141,10 +203,12 @@ public:
 		copy(that);
 	}
 
+	// move constructor
 	vector(vector&& tmp) {
 		my_move(std::move(tmp));
 	}
 
+	// copy assignment operator
 	vector<T>& operator=(vector const& rhs) {
 		if (this != &rhs) {
 			destroy();
@@ -154,19 +218,19 @@ public:
 		return *this;
 	}
 
+	// move assignment operator
 	vector<T>& operator=(vector&& rhs) {
 		std::swap(this->data, rhs.data);
-
-		this->capacity = rhs.capacity;
-		this->fidx = rhs.fidx;
-		this->eidx = rhs.eidx;
-		this->unit = rhs.unit;
+		std::swap(this->capacity, rhs.capacity);
+		std::swap(this->fidx, rhs.fidx);
+		std::swap(this->eidx, rhs.eidx);
+		std::swap(this->unit, rhs.unit);
 
 		return *this;
 	}
 
+	// returns the number of elements in the array
 	uint64_t size(void) const {
-
 		if (eidx >= fidx) {
 			return eidx - fidx;
 		}
@@ -193,14 +257,12 @@ public:
 	void push_back(const T& elem) {
 		allocIfNull();
 
-		// If there is no empty spot.
 		if (!empty_spots()) {
-			resize();
+			add_back_resize(elem);
+		} else {
+			eidx = inc_mod(eidx);
+			new (&this->data[eidx]) T{elem};
 		}
-
-		eidx = inc_mod(eidx);
-
-		new (&this->data[eidx]) T{elem};
 	}
 
 	void push_back(T&& elem) {
@@ -229,12 +291,11 @@ public:
 		allocIfNull();
 		
 		if (!empty_spots()) {
-			resize();
+			add_front_resize(elem);
+		} else {
+			new (&this->data[fidx]) T{elem};
+			fidx = dec_mod(fidx);
 		}
-
-		new (&this->data[fidx]) T{elem};
-
-		fidx = dec_mod(fidx);
 	}
 
 	void push_front(T&& elem) {

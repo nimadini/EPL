@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <iostream>
 
-#define INITIAL_UNIT 16
+#define INITIAL_UNIT 8
 
 using std::cout;
 
@@ -300,7 +300,6 @@ public:
 	}
 
 	void push_front(T&& elem) {
-		std::cout << "**in move push_front\n";
 		allocIfNull();
 		
 		if (!empty_spots()) {
