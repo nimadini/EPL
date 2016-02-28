@@ -52,8 +52,15 @@ void LifeForm::region_resize(void) {};
 void LifeForm::update_position(void) {
 	double timeElapsed = Event::now() - this->update_time;
 
-	// TODO: charge for energy consumed! 
-	// Also, check if dead! maybe resizing?? (called by QuadTree??)
+	// charge for energy consumed! 
+	energy -= movement_cost(timeElapsed, this->speed);
+
+	// TODO: resizing?? (called by QuadTree??)
+
+	// if energy < min_energy: Die bitch!
+	if (energy < min_energy) {
+		this->die();
+	}
 
 	const double time_tolerance = 1.0e-3; // TODO: find the actual const!!!
 
@@ -73,7 +80,9 @@ void LifeForm::update_position(void) {
 void LifeForm::age(void) {
 	energy -= age_penalty;
 
-	// TODO: check if: energy < min_energy
+	if (energy < min_energy) {
+		this->die();
+	}
 };
 
 void LifeForm::reproduce(SmartPointer<LifeForm>) {};
