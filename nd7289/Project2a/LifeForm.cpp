@@ -49,7 +49,32 @@ void LifeForm::set_course(double) {};
 
 void LifeForm::region_resize(void) {};
 
-void LifeForm::age(void) {};
+void LifeForm::update_position(void) {
+	double timeElapsed = Event::now() - this->update_time;
+
+	// TODO: charge for energy consumed! 
+	// Also, check if dead! maybe resizing?? (called by QuadTree??)
+
+	const double time_tolerance = 1.0e-3; // TODO: find the actual const!!!
+
+	if (timeElapsed < time_tolerance) {
+		return;
+	}
+
+	this->update_time = Event::now();
+
+	double distance = timeElapsed * this->speed;
+	double deltaX = distance * cos(this->course);
+	double deltaY = distance * sin(this->course);
+	Point delta = Point{ deltaX, deltaY };
+	this->pos += delta;
+}
+
+void LifeForm::age(void) {
+	energy -= age_penalty;
+
+	// TODO: check if: energy < min_energy
+};
 
 void LifeForm::reproduce(SmartPointer<LifeForm>) {};
 
