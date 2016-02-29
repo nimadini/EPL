@@ -45,12 +45,51 @@ void LifeForm::set_course(double) {};
 
 std::string LifeForm::player_name(void) const { return "NIMA"; };*/
 
-void LifeForm::set_course(double) {};
+void LifeForm::set_course(double course) {
+	update_position();
 
-void LifeForm::region_resize(void) {};
+	this->course = course;
+}
+
+void LifeForm::set_speed(double speed) {
+	// if there is a border_cross_event:
+	if (this->border_cross_event) {
+		this->border_cross_event->cancel();	// cancel the existing event
+		update_position();					// update the position
+	}
+
+	// update the speed
+	this->speed = speed;
+
+	SmartPointer<LifeForm> self = SmartPointer<LifeForm>(this);
+
+	// based on the updated speed, compute the distance/time to the boarder (asking for QTree)
+	double distanceToBorder = LifeForm::space.distance_to_edge(this->pos, this->course);
+	double timeToReachBorder = distanceToBorder / speed;
+
+	// add the threshold to avoid the floating point error
+	timeToReachBorder+=Point::tolerance;
+
+	// create a new border cross event
+	this->border_cross_event = new Event(timeToReachBorder, [self](void) { self->border_cross(); });
+}
+
+void LifeForm::region_resize(void) {
+
+}
+
+void LifeForm::border_cross(void) {
+
+}
 
 void LifeForm::update_position(void) {
 	double timeElapsed = Event::now() - this->update_time;
+
+	const double time_tolerance = 1.0e-3; // TODO: find the actual const!!!
+
+	if (timeElapsed < time_tolerance) {
+		return;
+	}
 
 	// charge for energy consumed! 
 	energy -= movement_cost(timeElapsed, this->speed);
@@ -60,12 +99,6 @@ void LifeForm::update_position(void) {
 	// if energy < min_energy: Die bitch!
 	if (energy < min_energy) {
 		this->die();
-	}
-
-	const double time_tolerance = 1.0e-3; // TODO: find the actual const!!!
-
-	if (timeElapsed < time_tolerance) {
-		return;
 	}
 
 	this->update_time = Event::now();
@@ -83,16 +116,14 @@ void LifeForm::age(void) {
 	if (energy < min_energy) {
 		this->die();
 	}
-};
+}
 
-void LifeForm::reproduce(SmartPointer<LifeForm>) {};
-
-void LifeForm::set_speed(double) {};
+void LifeForm::reproduce(SmartPointer<LifeForm>) {}
 
 ObjList LifeForm::perceive(double) {
 	ObjList* obj = new ObjList();
 	return *obj;
-};
+}
 
 
 
