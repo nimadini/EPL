@@ -72,6 +72,8 @@ void LifeForm::set_speed(double speed) {
 	this->compute_next_move();
 }
 
+// TODO: In general, check if we are working based on the updated position!!
+
 void LifeForm::compute_next_move(void) {
 	if (!this->is_alive) {
 		return;
@@ -106,8 +108,71 @@ void LifeForm::region_resize(void) {
 	this->compute_next_move();
 }
 
-void LifeForm::resolve_encounter(SmartPointer<LifeForm>) {
+void LifeForm::eat(SmartPointer<LifeForm> victim) {
 
+}
+
+
+bool LifeForm::eat_trial(SmartPointer<LifeForm> eater, 
+		SmartPointer<LifeForm> victim) {
+
+	double rnd = drand48();
+	double esc = eat_success_chance(eater->energy, victim->energy);
+
+	return rnd < esc;
+}
+
+void LifeForm::resolve_encounter(SmartPointer<LifeForm> alien) {
+	Action my_act = this->encounter(this->info_about_them(alien));
+
+	Action alien_act = alien->encounter(
+		alien->info_about_them(SmartPointer<LifeForm>(this)));
+
+	if (my_act == Action::LIFEFORM_EAT && alien_act == Action::LIFEFORM_EAT) {
+		bool me_succeed = LifeForm::eat_trial(SmartPointer<LifeForm>(this), alien);
+		bool alien_succeed = LifeForm::eat_trial(alien, SmartPointer<LifeForm>(this));
+
+		// break the tie based on the strategy
+		if (me_succeed && alien_succeed) {
+			if (encounter_strategy == EncounterResolver::EVEN_MONEY) {
+				drand48() > 0.5 ? this->eat(alien) : alien->eat(SmartPointer<LifeForm>(this));
+
+			} else if (encounter_strategy == EncounterResolver::BIG_GUY_WINS) {
+				this->energy > alien->energy ? this->eat(alien) : 
+									alien->eat(SmartPointer<LifeForm>(this));
+
+			} else if (encounter_strategy == EncounterResolver::UNDERDOG_IS_HERE) {
+				this->energy < alien->energy ? this->eat(alien) : 
+									alien->eat(SmartPointer<LifeForm>(this));
+
+			} else if (encounter_strategy == EncounterResolver::FASTER_GUY_WINS) {
+				this->speed > alien->speed ? this->eat(alien) : 
+									alien->eat(SmartPointer<LifeForm>(this));
+
+			} else if (encounter_strategy == EncounterResolver::SLOWER_GUY_WINS) {
+				this->speed < alien->speed ? this->eat(alien) : 
+									alien->eat(SmartPointer<LifeForm>(this));
+			}
+
+		} else if (me_succeed) {
+			this->eat(alien);
+
+		} else if (alien_succeed) {
+			alien->eat(SmartPointer<LifeForm>(this));
+		}
+
+	} else if (my_act == Action::LIFEFORM_EAT && alien_act == Action::LIFEFORM_IGNORE) {
+		if (LifeForm::eat_trial(SmartPointer<LifeForm>(this), alien)) {
+			this->eat(alien);
+		}
+		
+	} else if (my_act == Action::LIFEFORM_IGNORE && alien_act == Action::LIFEFORM_EAT) {
+		if (LifeForm::eat_trial(alien, SmartPointer<LifeForm>(this))) {
+			alien->eat(SmartPointer<LifeForm>(this));
+		}
+
+	}
+	// else do nothing special (just return)
 }
 
 void LifeForm::check_encounter(void) {

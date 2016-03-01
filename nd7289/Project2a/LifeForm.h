@@ -141,6 +141,8 @@ private:
 
       void compute_next_move(void); // a simple function that creates the next border_cross_event
 
+      static bool eat_trial(SmartPointer<LifeForm> eater, SmartPointer<LifeForm> victim);
+
       ObjInfo info_about_them(SmartPointer<LifeForm>);
 
       const Point& position() const { return pos; }
