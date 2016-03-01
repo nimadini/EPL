@@ -46,9 +46,15 @@ void LifeForm::set_course(double) {};
 std::string LifeForm::player_name(void) const { return "NIMA"; };*/
 
 void LifeForm::set_course(double course) {
-	update_position();
+	// if there is a border_cross_event:
+	if (this->border_cross_event) {
+		this->border_cross_event->cancel();	// cancel the existing event
+		update_position();					// update the position
+	}
 
 	this->course = course;
+
+	create_border_cross_event();
 }
 
 void LifeForm::set_speed(double speed) {
@@ -58,9 +64,19 @@ void LifeForm::set_speed(double speed) {
 		update_position();					// update the position
 	}
 
+	// if the new speed value is 0.0
+	if (speed <= std::numeric_limits<double>::epsilon()) {
+		this->speed = 0.0;
+		return;
+	}
+
 	// update the speed
 	this->speed = speed;
 
+	create_border_cross_event();
+}
+
+void LifeForm::create_border_cross_event(void) {
 	// based on the updated speed, compute the distance/time to the boarder (asking for QTree)
 	double distanceToBorder = LifeForm::space.distance_to_edge(this->pos, this->course);
 	double timeToReachBorder = distanceToBorder / speed;
@@ -124,7 +140,9 @@ void LifeForm::age(void) {
 	}
 }
 
-void LifeForm::reproduce(SmartPointer<LifeForm>) {}
+void LifeForm::reproduce(SmartPointer<LifeForm> lf) {
+
+}
 
 ObjList LifeForm::perceive(double) {
 	ObjList* obj = new ObjList();
