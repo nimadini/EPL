@@ -108,10 +108,36 @@ void LifeForm::region_resize(void) {
 	this->compute_next_move();
 }
 
-void LifeForm::eat(SmartPointer<LifeForm> victim) {
+void LifeForm::gain_energy(double e) {
+	if (!this->is_alive) {
+		return;
+	}
 
+	this->energy += e;
 }
 
+void LifeForm::eat(SmartPointer<LifeForm> victim) {
+	// if either side is dead, no eating happens
+	if (!this->is_alive || !victim->is_alive) {
+		return;
+	}
+
+	this->energy -= eat_cost_function(); // TODO: what are the 2 double arguments?!
+
+	// eating unsuccessful (TODO: is this the correct behavior?)
+	if (this->energy < min_energy) {
+		return;
+	}
+
+	double energy_earned = victim->energy * eat_efficiency;
+
+	SmartPointer<LifeForm> self = SmartPointer<LifeForm>(this);
+
+	new Event(digestion_time, [self, energy_earned](void) 
+								{ self->gain_energy(energy_earned); });
+
+	victim->die();
+}
 
 bool LifeForm::eat_trial(SmartPointer<LifeForm> eater, 
 		SmartPointer<LifeForm> victim) {
