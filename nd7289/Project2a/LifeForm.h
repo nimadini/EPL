@@ -147,8 +147,6 @@ private:
 
       static Canvas win;
 
-      void create_border_cross_event(void);
-
 protected:
       double health(void) const {
     	  if (!is_alive) { return 0.0; }

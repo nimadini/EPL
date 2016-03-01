@@ -56,30 +56,31 @@ void LifeForm::set_course(double course) {
 
 	this->course = course;
 
-	create_border_cross_event();
+	this->compute_next_move();
 }
 
 void LifeForm::set_speed(double speed) {
 	// if there is a border_cross_event:
 	if (this->border_cross_event) {
 		this->border_cross_event->cancel();	// cancel the existing event
+		// TODO: shall we set boarder_cross_event to nullptr here???
 		update_position();					// update the position
 	}
 
 	// if the new speed value is 0.0
 	if (speed <= std::numeric_limits<double>::epsilon()) {
 		this->speed = 0.0;
-		this->border_cross_event = nullptr;
+		this->border_cross_event = nullptr; // TODO: shall we?
 		return;
 	}
 
 	// update the speed
 	this->speed = speed;
 
-	create_border_cross_event();
+	this->compute_next_move();
 }
 
-void LifeForm::create_border_cross_event(void) {
+void LifeForm::compute_next_move(void) {
 	// based on the updated speed, compute the distance/time to the boarder (asking for QTree)
 	double distanceToBorder = LifeForm::space.distance_to_edge(this->pos, this->course);
 	double timeToReachBorder = distanceToBorder / speed;
@@ -97,7 +98,9 @@ void LifeForm::region_resize(void) {
 }
 
 void LifeForm::border_cross(void) {
-
+	this->border_cross_event->cancel();
+	this->update_position();
+	this->compute_next_move();
 }
 
 void LifeForm::update_position(void) {
@@ -108,14 +111,14 @@ void LifeForm::update_position(void) {
 
 	const double time_tolerance = 1.0e-3; // TODO: find the actual const!!!
 
-	if (timeElapsed < time_tolerance) {
+	// TODO? shall we check for speed == 0?
+	if (timeElapsed < time_tolerance || 
+		speed <= std::numeric_limits<double>::epsilon()) {
 		return;
 	}
 
 	// charge for energy consumed! 
 	energy -= movement_cost(timeElapsed, this->speed);
-
-	// TODO: resizing?? (called by QuadTree??)
 
 	// if energy < min_energy: die bitch!
 	if (energy < min_energy) {
@@ -123,8 +126,6 @@ void LifeForm::update_position(void) {
 	}
 
 	this->update_time = Event::now();
-
-	// TODO: do we need to check if speed == 0??
 
 	double distance = timeElapsed * this->speed;
 	double deltaX = distance * cos(this->course);
