@@ -63,15 +63,7 @@ void LifeForm::set_speed(double speed) {
 	// if there is a border_cross_event:
 	if (this->border_cross_event && this->border_cross_event->is_active()) {
 		this->border_cross_event->cancel();	// cancel the existing event
-		// TODO: shall we set boarder_cross_event to nullptr here???
 		update_position();					// update the position
-	}
-
-	// if the new speed value is 0.0
-	if (speed <= std::numeric_limits<double>::epsilon()) {
-		this->speed = 0.0;
-		// this->border_cross_event = nullptr; // TODO: shall we?
-		return;
 	}
 
 	// update the speed
@@ -81,7 +73,17 @@ void LifeForm::set_speed(double speed) {
 }
 
 void LifeForm::compute_next_move(void) {
-	// based on the updated speed, compute the distance/time to the boarder (asking for QTree)
+	if (!this->is_alive) {
+		return;
+	}
+
+	// if spees is ~ 0.0
+	if (speed <= std::numeric_limits<double>::epsilon()) {
+		this->border_cross_event = nullptr;
+		return;
+	}
+
+	// based on the current speed, compute the distance/time to the boarder (asking for QTree)
 	double distanceToBorder = LifeForm::space.distance_to_edge(this->pos, this->course);
 	double timeToReachBorder = distanceToBorder / speed;
 
@@ -109,6 +111,10 @@ void LifeForm::resolve_encounter(SmartPointer<LifeForm>) {
 }
 
 void LifeForm::check_encounter(void) {
+	if (!this->is_alive) {
+		return;
+	}
+
 	SmartPointer<LifeForm> closest = this->space.closest(this->pos, encounter_distance);
 
 	if (closest) {
@@ -120,6 +126,7 @@ void LifeForm::check_encounter(void) {
 void LifeForm::border_cross(void) {
 	// no need to cancel the border_cross_event here,
 	// since it has already been occured and therefore canceled
+
 	this->update_position();
 	this->compute_next_move();
 
@@ -128,9 +135,10 @@ void LifeForm::border_cross(void) {
 }
 
 void LifeForm::update_position(void) {
-	// TODO: we may need to check if alive,
-	// cause if dead, space.update_position may
-	// throw an exception...
+	if (!this->is_alive) {
+		return;
+	}
+
 	double timeElapsed = Event::now() - this->update_time;
 
 	const double time_tolerance = 1.0e-3; // TODO: find the actual const!!!
@@ -171,7 +179,7 @@ void LifeForm::update_position(void) {
 }
 
 void LifeForm::age(void) {
-	energy -= age_penalty;
+	this->energy -= age_penalty;
 
 	if (energy < min_energy) {
 		this->die();
