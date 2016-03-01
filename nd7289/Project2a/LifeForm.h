@@ -133,7 +133,7 @@ private:
 
       void check_encounter(void);   // check to see if there's another object
 				    // within encounter_distance.  If there's
-                                // an object nearby, invoke resove_encounter
+                                // an object nearby, invoke resolve_encounter
                                 // on ourself with the closest object
   
       void die(void);          // kill the current life form

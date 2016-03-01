@@ -49,7 +49,7 @@ std::string LifeForm::player_name(void) const { return "NIMA"; };*/
 
 void LifeForm::set_course(double course) {
 	// if there is a border_cross_event:
-	if (this->border_cross_event && this->border_cross_event.is_active()) {
+	if (this->border_cross_event && this->border_cross_event->is_active()) {
 		this->border_cross_event->cancel();	// cancel the existing event
 		update_position();					// update the position
 	}
@@ -61,7 +61,7 @@ void LifeForm::set_course(double course) {
 
 void LifeForm::set_speed(double speed) {
 	// if there is a border_cross_event:
-	if (this->border_cross_event && this->border_cross_event.is_active()) {
+	if (this->border_cross_event && this->border_cross_event->is_active()) {
 		this->border_cross_event->cancel();	// cancel the existing event
 		// TODO: shall we set boarder_cross_event to nullptr here???
 		update_position();					// update the position
@@ -90,7 +90,8 @@ void LifeForm::compute_next_move(void) {
 
 	// create a new border cross event
 	SmartPointer<LifeForm> self = SmartPointer<LifeForm>(this);
-	this->border_cross_event = new Event(timeToReachBorder, [self](void) { self->border_cross(); });
+	this->border_cross_event = 
+		new Event(timeToReachBorder, [self](void) { self->border_cross(); });
 }
 
 // What you will want to do is have region_resize cancel 
@@ -98,13 +99,30 @@ void LifeForm::compute_next_move(void) {
 // and schedule the next movement event
 
 void LifeForm::region_resize(void) {
-	this->border_cross();
-}
-
-void LifeForm::border_cross(void) {
 	this->border_cross_event->cancel();
 	this->update_position();
 	this->compute_next_move();
+}
+
+void LifeForm::resolve_encounter(SmartPointer<LifeForm>) {
+
+}
+
+void LifeForm::check_encounter(void) {
+	SmartPointer<LifeForm> closest = this->space.closest(this->pos, encounter_distance);
+
+	if (closest) {
+		// SmartPointer<LifeForm> closestObj = SmartPointer<LifeForm>(found_obj_pair.second);
+		this->resolve_encounter(closest);
+	}
+}
+
+void LifeForm::border_cross(void) {
+	// TODO: can we just call region_resize() for the 1st 3 lines?
+	this->border_cross_event->cancel();
+	this->update_position();
+	this->compute_next_move();
+	this->check_encounter();
 }
 
 void LifeForm::update_position(void) {
@@ -127,6 +145,8 @@ void LifeForm::update_position(void) {
 	// if energy < min_energy: die bitch!
 	if (energy < min_energy) {
 		this->die();
+		this->space.remove(this->pos); // removing obj from QTree
+		return;
 	}
 
 	this->update_time = Event::now();
@@ -136,11 +156,18 @@ void LifeForm::update_position(void) {
 	double deltaY = distance * sin(this->course);
 	Point delta = Point{ deltaX, deltaY };
 
-	// update the position in the QTree
-	this->space.update_position(this->pos, this->pos + delta);
+	// if the new calculated point is outside of QTree boundaries
+	if (this->space.is_out_of_bounds(this->pos + delta)) {
+		this->die();
+		this->space.remove(this->pos); // removing obj from QTree
+		return;
+	}
 
 	// update the position in the LifeForm obj
 	this->pos += delta;
+
+	// update the position in the QTree
+	this->space.update_position(this->pos, this->pos + delta);
 }
 
 void LifeForm::age(void) {
@@ -148,6 +175,7 @@ void LifeForm::age(void) {
 
 	if (energy < min_energy) {
 		this->die();
+		this->space.remove(this->pos); // removing obj from QTree
 	}
 }
 
