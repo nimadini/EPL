@@ -49,7 +49,7 @@ std::string LifeForm::player_name(void) const { return "NIMA"; };*/
 
 void LifeForm::set_course(double course) {
 	// if there is a border_cross_event:
-	if (this->border_cross_event) {
+	if (this->border_cross_event && this->border_cross_event.is_active()) {
 		this->border_cross_event->cancel();	// cancel the existing event
 		update_position();					// update the position
 	}
@@ -61,7 +61,7 @@ void LifeForm::set_course(double course) {
 
 void LifeForm::set_speed(double speed) {
 	// if there is a border_cross_event:
-	if (this->border_cross_event) {
+	if (this->border_cross_event && this->border_cross_event.is_active()) {
 		this->border_cross_event->cancel();	// cancel the existing event
 		// TODO: shall we set boarder_cross_event to nullptr here???
 		update_position();					// update the position
@@ -70,7 +70,7 @@ void LifeForm::set_speed(double speed) {
 	// if the new speed value is 0.0
 	if (speed <= std::numeric_limits<double>::epsilon()) {
 		this->speed = 0.0;
-		this->border_cross_event = nullptr; // TODO: shall we?
+		// this->border_cross_event = nullptr; // TODO: shall we?
 		return;
 	}
 
@@ -93,8 +93,12 @@ void LifeForm::compute_next_move(void) {
 	this->border_cross_event = new Event(timeToReachBorder, [self](void) { self->border_cross(); });
 }
 
-void LifeForm::region_resize(void) {
+// What you will want to do is have region_resize cancel 
+// any pending border crossing events, update your position, 
+// and schedule the next movement event
 
+void LifeForm::region_resize(void) {
+	this->border_cross();
 }
 
 void LifeForm::border_cross(void) {
