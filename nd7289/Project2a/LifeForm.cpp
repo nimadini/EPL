@@ -61,8 +61,6 @@ void LifeForm::set_speed(double speed) {
 	// update the speed
 	this->speed = speed;
 
-	SmartPointer<LifeForm> self = SmartPointer<LifeForm>(this);
-
 	// based on the updated speed, compute the distance/time to the boarder (asking for QTree)
 	double distanceToBorder = LifeForm::space.distance_to_edge(this->pos, this->course);
 	double timeToReachBorder = distanceToBorder / speed;
@@ -71,6 +69,7 @@ void LifeForm::set_speed(double speed) {
 	timeToReachBorder+=Point::tolerance;
 
 	// create a new border cross event
+	SmartPointer<LifeForm> self = SmartPointer<LifeForm>(this);
 	this->border_cross_event = new Event(timeToReachBorder, [self](void) { self->border_cross(); });
 }
 
@@ -96,17 +95,24 @@ void LifeForm::update_position(void) {
 
 	// TODO: resizing?? (called by QuadTree??)
 
-	// if energy < min_energy: Die bitch!
+	// if energy < min_energy: die bitch!
 	if (energy < min_energy) {
 		this->die();
 	}
 
 	this->update_time = Event::now();
 
+	// TODO: do we need to check if speed == 0??
+
 	double distance = timeElapsed * this->speed;
 	double deltaX = distance * cos(this->course);
 	double deltaY = distance * sin(this->course);
 	Point delta = Point{ deltaX, deltaY };
+
+	// update the position in the QTree
+	this->space.update_position(this->pos, this->pos + delta);
+
+	// update the position in the LifeForm obj
 	this->pos += delta;
 }
 
