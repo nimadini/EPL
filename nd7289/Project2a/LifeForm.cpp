@@ -118,10 +118,12 @@ void LifeForm::check_encounter(void) {
 }
 
 void LifeForm::border_cross(void) {
-	// TODO: can we just call region_resize() for the 1st 3 lines?
-	this->border_cross_event->cancel();
+	// no need to cancel the border_cross_event here,
+	// since it has already been occured and therefore canceled
 	this->update_position();
 	this->compute_next_move();
+
+	// we need to check for encounters here
 	this->check_encounter();
 }
 
@@ -145,7 +147,6 @@ void LifeForm::update_position(void) {
 	// if energy < min_energy: die bitch!
 	if (energy < min_energy) {
 		this->die();
-		this->space.remove(this->pos); // removing obj from QTree
 		return;
 	}
 
@@ -159,15 +160,14 @@ void LifeForm::update_position(void) {
 	// if the new calculated point is outside of QTree boundaries
 	if (this->space.is_out_of_bounds(this->pos + delta)) {
 		this->die();
-		this->space.remove(this->pos); // removing obj from QTree
 		return;
 	}
 
-	// update the position in the LifeForm obj
-	this->pos += delta;
-
 	// update the position in the QTree
 	this->space.update_position(this->pos, this->pos + delta);
+
+	// update the position in the LifeForm obj
+	this->pos += delta;
 }
 
 void LifeForm::age(void) {
@@ -175,7 +175,6 @@ void LifeForm::age(void) {
 
 	if (energy < min_energy) {
 		this->die();
-		this->space.remove(this->pos); // removing obj from QTree
 	}
 }
 
