@@ -101,6 +101,9 @@ void LifeForm::border_cross(void) {
 }
 
 void LifeForm::update_position(void) {
+	// TODO: we may need to check if alive,
+	// cause if dead, space.update_position may
+	// throw an exception...
 	double timeElapsed = Event::now() - this->update_time;
 
 	const double time_tolerance = 1.0e-3; // TODO: find the actual const!!!
