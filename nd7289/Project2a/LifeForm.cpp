@@ -45,6 +45,8 @@ void LifeForm::set_course(double) {};
 
 std::string LifeForm::player_name(void) const { return "NIMA"; };*/
 
+// TODO:: can speed/course be negative?
+
 void LifeForm::set_course(double course) {
 	// if there is a border_cross_event:
 	if (this->border_cross_event) {
@@ -67,6 +69,7 @@ void LifeForm::set_speed(double speed) {
 	// if the new speed value is 0.0
 	if (speed <= std::numeric_limits<double>::epsilon()) {
 		this->speed = 0.0;
+		this->border_cross_event = nullptr;
 		return;
 	}
 
