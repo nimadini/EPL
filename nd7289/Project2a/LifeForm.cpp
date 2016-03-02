@@ -82,15 +82,15 @@ void LifeForm::compute_next_move(void) {
 
 	// based on the current speed, compute the distance/time to the boarder (asking for QTree)
 	double distanceToBorder = LifeForm::space.distance_to_edge(this->pos, this->course);
-	double timeToReachBorder = distanceToBorder / speed;
+	double time_to_reach_border = distanceToBorder / speed;
 
 	// add the threshold to avoid the floating point error
-	timeToReachBorder+=Point::tolerance;
+	time_to_reach_border += Point::tolerance;
 
 	// create a new border cross event
 	SmartPointer<LifeForm> self = SmartPointer<LifeForm>(this);
 	this->border_cross_event = 
-		new Event(timeToReachBorder, [self](void) { self->border_cross(); });
+		new Event(time_to_reach_border, [self](void) { self->border_cross(); });
 }
 
 // What you will want to do is have region_resize cancel 
@@ -120,7 +120,7 @@ void LifeForm::eat(SmartPointer<LifeForm> victim) {
 	this->energy -= eat_cost_function(); // TODO: what are the 2 double arguments?!
 
 	// eating unsuccessful (TODO: is this the correct behavior?)
-	if (this->energy < min_energy) {
+	if (this->energy < ::min_energy) {
 		return;
 	}
 
@@ -128,7 +128,7 @@ void LifeForm::eat(SmartPointer<LifeForm> victim) {
 
 	SmartPointer<LifeForm> self = SmartPointer<LifeForm>(this);
 
-	new Event(digestion_time, [self, energy_earned](void) 
+	new Event(::digestion_time, [self, energy_earned](void) 
 								{ self->gain_energy(energy_earned); });
 
 	victim->die();
@@ -155,22 +155,22 @@ void LifeForm::resolve_encounter(SmartPointer<LifeForm> alien) {
 
 		// break the tie based on the strategy
 		if (me_succeed && alien_succeed) {
-			if (encounter_strategy == EncounterResolver::EVEN_MONEY) {
+			if (::encounter_strategy == EncounterResolver::EVEN_MONEY) {
 				drand48() > 0.5 ? this->eat(alien) : alien->eat(SmartPointer<LifeForm>(this));
 
-			} else if (encounter_strategy == EncounterResolver::BIG_GUY_WINS) {
+			} else if (::encounter_strategy == EncounterResolver::BIG_GUY_WINS) {
 				this->energy > alien->energy ? this->eat(alien) : 
 									alien->eat(SmartPointer<LifeForm>(this));
 
-			} else if (encounter_strategy == EncounterResolver::UNDERDOG_IS_HERE) {
+			} else if (::encounter_strategy == EncounterResolver::UNDERDOG_IS_HERE) {
 				this->energy < alien->energy ? this->eat(alien) : 
 									alien->eat(SmartPointer<LifeForm>(this));
 
-			} else if (encounter_strategy == EncounterResolver::FASTER_GUY_WINS) {
+			} else if (::encounter_strategy == EncounterResolver::FASTER_GUY_WINS) {
 				this->speed > alien->speed ? this->eat(alien) : 
 									alien->eat(SmartPointer<LifeForm>(this));
 
-			} else if (encounter_strategy == EncounterResolver::SLOWER_GUY_WINS) {
+			} else if (::encounter_strategy == EncounterResolver::SLOWER_GUY_WINS) {
 				this->speed < alien->speed ? this->eat(alien) : 
 									alien->eat(SmartPointer<LifeForm>(this));
 			}
@@ -225,28 +225,28 @@ void LifeForm::update_position(void) {
 		return;
 	}
 
-	double timeElapsed = Event::now() - this->update_time;
+	double time_elapsed = Event::now() - this->update_time;
 
 	const double time_tolerance = 1.0e-3; // TODO: find the actual const!!!
 
 	// TODO? shall we check for speed == 0?
-	if (timeElapsed < time_tolerance || 
+	if (time_elapsed < time_tolerance || 
 		speed <= std::numeric_limits<double>::epsilon()) {
 		return;
 	}
 
 	// charge for energy consumed! 
-	energy -= movement_cost(timeElapsed, this->speed);
+	energy -= movement_cost(time_elapsed, this->speed);
 
 	// if energy < min_energy: die bitch!
-	if (energy < min_energy) {
+	if (energy < ::min_energy) {
 		this->die();
 		return;
 	}
 
 	this->update_time = Event::now();
 
-	double distance = timeElapsed * this->speed;
+	double distance = time_elapsed * this->speed;
 	double deltaX = distance * cos(this->course);
 	double deltaY = distance * sin(this->course);
 	Point delta = Point{ deltaX, deltaY };
@@ -267,9 +267,9 @@ void LifeForm::update_position(void) {
 // Note: the initial aging event has been
 // created in the LifeForm::create_life 
 void LifeForm::age(void) {
-	this->energy -= age_penalty;
+	this->energy -= ::age_penalty;
 
-	if (energy < min_energy) {
+	if (energy < ::min_energy) {
 		this->die();
 		return;
 	}
