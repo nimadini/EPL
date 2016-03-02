@@ -314,20 +314,19 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 	this->energy = new_energy;
 }
 
-ObjList LifeForm::perceive(double) {
+ObjList LifeForm::perceive(double radius) {
+	// list of obj infos in the given radius in QTree
 	ObjList items_perceived{};
 
-	/*obj.push_back();
+	// list of nearby LifeForms
+	std::vector<SmartPointer<LifeForm>> nearby_objs = 
+			this->space.nearby(this->pos, radius);
 
-	for (vector<string>::iterator itr = nearby_spots.begin(); 
-		itr < nearby_spots.end(); itr++) {
+	for (vector<string>::iterator itr = nearby_objs.begin(); 
+		itr < nearby_objs.end(); itr++) {
 
-		if (!this->space.is_occupied(*itr)) {
-			child_spot = *itr;
-			break;
-		}
-	}*/
-
+		items_perceived.push_back(this->info_about_them(*itr));
+	}
 
 	return items_perceived;
 }
