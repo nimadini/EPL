@@ -32,19 +32,6 @@ ObjInfo LifeForm::info_about_them(SmartPointer<LifeForm> neighbor) {
 	return info;
 }
 
- /*void LifeForm::add_creator(IstreamCreator, const std::string&) {};
- void LifeForm::create_life() {};
-/* draw the lifeform on 'win' where x,y is upper left corner */
- /*void LifeForm::draw(int, int) const {};
-
-void LifeForm::display(void) const {};
- void LifeForm::redisplay_all(void) {};
- void LifeForm::clear_screen(void) {};
-
-void LifeForm::set_course(double) {};
-
-std::string LifeForm::player_name(void) const { return "NIMA"; };*/
-
 // TODO:: can speed/course be negative?
 
 void LifeForm::set_course(double course) {
@@ -295,7 +282,3 @@ ObjList LifeForm::perceive(double) {
 	ObjList* obj = new ObjList();
 	return *obj;
 }
-
-
-
-
