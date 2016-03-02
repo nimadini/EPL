@@ -264,13 +264,21 @@ void LifeForm::update_position(void) {
 	this->pos += delta;
 }
 
-// TODO: how to consider age_frequency in aging logic??
+// Note: the initial aging event has been
+// created in the LifeForm::create_life 
 void LifeForm::age(void) {
 	this->energy -= age_penalty;
 
 	if (energy < min_energy) {
 		this->die();
+		return;
 	}
+
+	SmartPointer<LifeForm> self = SmartPointer<LifeForm>(this);
+
+	// creating the new aging event: the existing one, will be removed
+	// right after this method execution terminates.
+	new Event(::age_frequency, [self](void) { self->age(); });
 }
 
 void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
