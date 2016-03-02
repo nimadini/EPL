@@ -275,7 +275,16 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 		return;
 	}
 
-	// TODO: implement here
+	double new_energy = (1.0 - ::reproduce_cost) * 100/2.0 * this->energy;
+
+	if (new_energy < ::min_energy) {
+		return;
+	}
+
+	creature->energy = new_energy;
+	this->energy = new_energy;
+
+	// TODO: Shall we place the new object in QTree?
 }
 
 ObjList LifeForm::perceive(double) {
