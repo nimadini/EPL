@@ -264,6 +264,7 @@ void LifeForm::update_position(void) {
 	this->pos += delta;
 }
 
+// TODO: how to consider age_frequency in aging logic??
 void LifeForm::age(void) {
 	this->energy -= age_penalty;
 
