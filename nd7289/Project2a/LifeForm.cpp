@@ -18,8 +18,6 @@ void bound(T& x, const T& min, const T& max) {
 	if (x < min) { x = min; }
 }
 
-
-
 ObjInfo LifeForm::info_about_them(SmartPointer<LifeForm> neighbor) {
 	ObjInfo info;
 
@@ -32,8 +30,8 @@ ObjInfo LifeForm::info_about_them(SmartPointer<LifeForm> neighbor) {
 	return info;
 }
 
-// TODO:: can speed/course be negative?
 
+// Note: course can be negative!
 void LifeForm::set_course(double course) {
 	if (!this->is_alive) {
 		return;
@@ -50,6 +48,7 @@ void LifeForm::set_course(double course) {
 	this->compute_next_move();
 }
 
+// Note: Speed is non-negative
 void LifeForm::set_speed(double speed) {
 	if (!this->is_alive) {
 		return;
@@ -68,7 +67,6 @@ void LifeForm::set_speed(double speed) {
 }
 
 // TODO: In general, check if we are working based on the updated position!!
-
 void LifeForm::compute_next_move(void) {
 	if (!this->is_alive) {
 		return;
