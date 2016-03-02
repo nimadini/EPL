@@ -290,12 +290,12 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 		return;
 	}
 
-	std::vector<SmartPointer<LifeForm>> nearby_spots = 
-			this->space.nearby(this->pos, ::reproduce_dist);
-
 	// TODO: Insertion logic now commented out (broken!)
 
-	/*SmartPointer<LifeForm> child_spot = nullptr;
+	/*std::vector<SmartPointer<LifeForm>> nearby_spots = 
+			this->space.nearby(this->pos, ::reproduce_dist);
+
+	SmartPointer<LifeForm> child_spot = nullptr;
 
 	for(vector<string>::iterator itr = nearby_spots.begin(); 
 		itr < nearby_spots.end(); itr++) {
@@ -315,6 +315,19 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 }
 
 ObjList LifeForm::perceive(double) {
-	ObjList* obj = new ObjList();
-	return *obj;
+	ObjList items_perceived{};
+
+	/*obj.push_back();
+
+	for (vector<string>::iterator itr = nearby_spots.begin(); 
+		itr < nearby_spots.end(); itr++) {
+
+		if (!this->space.is_occupied(*itr)) {
+			child_spot = *itr;
+			break;
+		}
+	}*/
+
+
+	return items_perceived;
 }
