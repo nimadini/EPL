@@ -277,8 +277,18 @@ void LifeForm::age(void) {
 	}
 }
 
-void LifeForm::reproduce(SmartPointer<LifeForm> lf) {
+void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
+	if (!this->is_alive) {
+		return;
+	}
 
+	double time_elapsed = Event::now() - this->reproduce_time;
+
+	if (time_elapsed < ::min_reproduce_time) {
+		return;
+	}
+
+	// TODO: implement here
 }
 
 ObjList LifeForm::perceive(double) {
