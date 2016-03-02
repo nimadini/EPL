@@ -35,6 +35,10 @@ ObjInfo LifeForm::info_about_them(SmartPointer<LifeForm> neighbor) {
 // TODO:: can speed/course be negative?
 
 void LifeForm::set_course(double course) {
+	if (!this->is_alive) {
+		return;
+	}
+
 	// if there is a border_cross_event:
 	if (this->border_cross_event && this->border_cross_event->is_active()) {
 		this->border_cross_event->cancel();	// cancel the existing event
@@ -47,6 +51,10 @@ void LifeForm::set_course(double course) {
 }
 
 void LifeForm::set_speed(double speed) {
+	if (!this->is_alive) {
+		return;
+	}
+
 	// if there is a border_cross_event:
 	if (this->border_cross_event && this->border_cross_event->is_active()) {
 		this->border_cross_event->cancel();	// cancel the existing event
@@ -281,10 +289,28 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 		return;
 	}
 
+	std::vector<SmartPointer<LifeForm>> nearby_spots = 
+			this->space.nearby(this->pos, ::reproduce_dist);
+
+	// TODO: Insertion logic now commented out (broken!)
+
+	/*SmartPointer<LifeForm> child_spot = nullptr;
+
+	for(vector<string>::iterator itr = nearby_spots.begin(); 
+		itr < nearby_spots.end(); itr++) {
+
+		if (!this->space.is_occupied(*itr)) {
+			child_spot = *itr;
+			break;
+		}
+	}
+
+	if (!child_spot) {
+		return;
+	} */
+
 	creature->energy = new_energy;
 	this->energy = new_energy;
-
-	// TODO: Shall we place the new object in QTree?
 }
 
 ObjList LifeForm::perceive(double) {
