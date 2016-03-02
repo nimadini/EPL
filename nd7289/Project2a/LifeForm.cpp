@@ -322,8 +322,8 @@ ObjList LifeForm::perceive(double radius) {
 	std::vector<SmartPointer<LifeForm>> nearby_objs = 
 			this->space.nearby(this->pos, radius);
 
-	for (vector<string>::iterator itr = nearby_objs.begin(); 
-		itr < nearby_objs.end(); itr++) {
+	for (vector<SmartPointer<LifeForm>>::iterator itr = 
+			nearby_objs.begin(); itr < nearby_objs.end(); itr++) {
 
 		items_perceived.push_back(this->info_about_them(*itr));
 	}
