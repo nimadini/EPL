@@ -320,7 +320,18 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 	this->energy = new_energy;
 }
 
+// TODO: Where exactly do we need to update our own position? [GENERAL]
+
 ObjList LifeForm::perceive(double radius) {
+	// only alive objects can perceive 
+	// {TODO: shall this be checked? (is return val correct?)}
+	if (!this->is_alive) {
+		return ObjList{};
+	}
+
+	// TODO: do we need to update our own position?
+	// this->update_position();
+
 	// list of obj infos in the given radius in QTree
 	ObjList items_perceived{};
 
