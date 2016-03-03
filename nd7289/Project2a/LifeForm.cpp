@@ -61,7 +61,7 @@ void LifeForm::set_speed(double speed) {
 	}
 
 	// update the speed
-	this->speed = speed;
+	this->speed = std::min(speed, ::max_speed);
 
 	this->compute_next_move();
 }
