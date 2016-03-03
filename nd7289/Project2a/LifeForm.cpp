@@ -337,7 +337,7 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 }
 
 // TODO: Where exactly do we need to update our own position? [GENERAL]
-
+// TODO: Where the heck is perceive being invoked? (may need to check if alive there...)
 ObjList LifeForm::perceive(double radius) {
 	// only alive objects can perceive 
 	// {TODO: shall this be checked? (is return val correct?)}
@@ -349,7 +349,7 @@ ObjList LifeForm::perceive(double radius) {
 
 	if (this->energy < ::min_energy) {
 		this->die();
-		return;
+		return ObjList{};
 	}
 
 	// TODO: do we need to update our own position?
