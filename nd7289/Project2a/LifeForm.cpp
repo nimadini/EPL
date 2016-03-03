@@ -202,8 +202,24 @@ void LifeForm::check_encounter(void) {
 	SmartPointer<LifeForm> closest = this->space.closest(this->pos, encounter_distance);
 
 	if (closest) {
-		// SmartPointer<LifeForm> closestObj = SmartPointer<LifeForm>(found_obj_pair.second);
-		this->resolve_encounter(closest);
+		this->energy -= encounter_penalty;
+		closest->energy -= encounter_penalty;
+
+		bool both_alive = true;
+
+		if (this->energy < ::min_energy) {
+			both_alive = false;
+			this->die();
+		}
+
+		if (closest->energy < ::min_energy) {
+			both_alive = false;
+			closest->die();
+		}
+
+		if (both_alive) {
+			this->resolve_encounter(closest);
+		}
 	}
 }
 
