@@ -117,7 +117,7 @@ void LifeForm::eat(SmartPointer<LifeForm> victim) {
 		return;
 	}
 
-	this->energy -= eat_cost_function(); // TODO: what are the 2 double arguments?!
+	this->energy -= eat_cost_function(this->energy, victim->energy);
 
 	// eating unsuccessful (TODO: is this the correct behavior?)
 	if (this->energy < ::min_energy) {
