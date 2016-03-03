@@ -30,6 +30,8 @@ ObjInfo LifeForm::info_about_them(SmartPointer<LifeForm> neighbor) {
 	return info;
 }
 
+//TODO [GENERAL]: when shall we set the 1st border_cross_event?
+// Should we do it in reproduce for child?
 
 // Note: course can be negative!
 void LifeForm::set_course(double course) {
@@ -306,35 +308,56 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 		return;
 	}
 
-	double new_energy = (1.0 - ::reproduce_cost) * 100/2.0 * this->energy;
+	double new_energy = (1.0 - ::reproduce_cost) * this->energy / 2.0 * 100.0;
 
 	if (new_energy < ::min_energy) {
 		return;
 	}
 
-	// TODO: Insertion logic now commented out (broken!)
+	double child_distance = 0.90 * ::reproduce_dist;
 
-	/*std::vector<SmartPointer<LifeForm>> nearby_spots = 
-			this->space.nearby(this->pos, ::reproduce_dist);
+	std::vector<Point> candidates{};
 
-	SmartPointer<LifeForm> child_spot = nullptr;
+	candidates.push_back(Point{this->pos.xpos + child_distance, this->pos.ypos});
+	candidates.push_back(Point{this->pos.xpos, this->pos.ypos + child_distance});
+	candidates.push_back(Point{this->pos.xpos + child_distance, this->pos.ypos + child_distance});
+	candidates.push_back(Point{this->pos.xpos - child_distance, this->pos.ypos - child_distance});
 
-	for(vector<string>::iterator itr = nearby_spots.begin(); 
-		itr < nearby_spots.end(); itr++) {
+	Point* child_pos = nullptr;
 
-		if (!this->space.is_occupied(*itr)) {
-			child_spot = *itr;
+	for (auto & candidate : candidates) {
+		if (creature->space.is_out_of_bounds(candidate)) {
+			continue;
+		}
+
+		if (!this->space.is_occupied(candidate)) {
+			child_pos = &candidate;
 			break;
 		}
 	}
 
-	if (!child_spot) {
+	if (!child_pos) {
 		return;
-	} */
+	}
 
+	// assert(!creature->space.is_out_of_bounds(*child_pos));
+
+	/*creature->space.insert(creature, creature->pos, [creature](void) { creature->region_resize(); });
+	(void) new Event(age_frequency, [creature](void) { creature->age(); });
+	creature->is_alive = true;
+
+	creature->pos = *child_pos;
 	creature->energy = new_energy;
-	this->energy = new_energy;
+	
+	this->energy = new_energy;*/
+
+	// TODO: wtf is the 3rd argument?! :O
 }
+
+// find the closest nearby object. update its position. if after update the distance is still
+// in the collision distance, we have a collision. If not, no collision, skip.
+
+// perceive -> don't need to update_position
 
 // TODO: Where exactly do we need to update our own position? [GENERAL]
 // TODO: Where the heck is perceive being invoked? (may need to check if alive there...)
@@ -347,7 +370,7 @@ ObjList LifeForm::perceive(double radius) {
 
 	if (radius > ::max_perceive_range) {
 		radius = ::max_perceive_range;
-		
+
 	} else if (radius < ::min_perceive_range) {
 		radius = ::min_perceive_range;
 	}
