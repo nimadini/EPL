@@ -345,6 +345,13 @@ ObjList LifeForm::perceive(double radius) {
 		return ObjList{};
 	}
 
+	if (radius > ::max_perceive_range) {
+		radius = ::max_perceive_range;
+		
+	} else if (radius < ::min_perceive_range) {
+		radius = ::min_perceive_range;
+	}
+
 	this->energy -= perceive_cost(radius);
 
 	if (this->energy < ::min_energy) {
