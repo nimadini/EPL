@@ -345,6 +345,13 @@ ObjList LifeForm::perceive(double radius) {
 		return ObjList{};
 	}
 
+	this->energy -= perceive_cost(radius);
+
+	if (this->energy < ::min_energy) {
+		this->die();
+		return;
+	}
+
 	// TODO: do we need to update our own position?
 	// this->update_position();
 
