@@ -74,7 +74,7 @@ void LifeForm::compute_next_move(void) {
 		return;
 	}
 
-	// if spees is ~ 0.0
+	// if speed is ~ 0.0
 	if (speed <= std::numeric_limits<double>::epsilon()) {
 		this->border_cross_event = nullptr;
 		return;
@@ -202,34 +202,34 @@ void LifeForm::check_encounter(void) {
 		return;
 	}
 
-	SmartPointer<LifeForm> closest = this->space.closest(this->pos, ::encounter_distance);
+	// we are assuming there should be a closest!
 
-	if (closest) {
-		closest->update_position();
+	SmartPointer<LifeForm> closest = this->space.closest(this->pos);
+	
+	closest->update_position();
 
-		// TODO: check for the condition
-		if (this->pos.distance(closest->pos) > ::encounter_distance) {
-			return;
-		}
+	// TODO: check for the condition
+	if (this->pos.distance(closest->pos) > ::encounter_distance) {
+		return;
+	}
 
-		this->energy -= encounter_penalty;
-		closest->energy -= encounter_penalty;
+	this->energy -= encounter_penalty;
+	closest->energy -= encounter_penalty;
 
-		bool both_alive = true;
+	bool both_alive = true;
 
-		if (this->energy < ::min_energy) {
-			both_alive = false;
-			this->die();
-		}
+	if (this->energy < ::min_energy) {
+		both_alive = false;
+		this->die();
+	}
 
-		if (closest->energy < ::min_energy) {
-			both_alive = false;
-			closest->die();
-		}
+	if (closest->energy < ::min_energy) {
+		both_alive = false;
+		closest->die();
+	}
 
-		if (both_alive) {
-			this->resolve_encounter(closest);
-		}
+	if (both_alive) {
+		this->resolve_encounter(closest);
 	}
 }
 

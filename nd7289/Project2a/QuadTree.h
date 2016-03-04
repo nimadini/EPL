@@ -122,9 +122,6 @@ public:
                                 // not be empty (i.e., there must be a closest
                                 // object)
 
-  Obj closest(const Point&, double dist) const; // [ Nima ] 
-                                                 // closest in the provided distance
-
   std::vector<Obj> nearby(const Point& center, double radius) const; 
                                 // return a vector of Objs that are within 
                                 // the specified circle
@@ -553,12 +550,6 @@ Obj QuadTree<Obj>::closest(const Point& pos) const {
   std::pair<bool,Obj> tmp = root->closest(pos, dist);
   assert(tmp.first);
   return tmp.second;
-}
-
-template <class Obj>
-Obj QuadTree<Obj>::closest(const Point& pos, double distance) const {
-  std::pair<bool,Obj> tmp = root->closest(pos, distance);
-  return tmp.first ? tmp.second : nullptr;
 }
 
 template <class Obj>
