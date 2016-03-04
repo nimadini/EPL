@@ -202,9 +202,16 @@ void LifeForm::check_encounter(void) {
 		return;
 	}
 
-	SmartPointer<LifeForm> closest = this->space.closest(this->pos, encounter_distance);
+	SmartPointer<LifeForm> closest = this->space.closest(this->pos, ::encounter_distance);
 
 	if (closest) {
+		closest->update_position();
+
+		// TODO: check for the condition
+		if (this->pos.distance(closest->pos) > ::encounter_distance) {
+			return;
+		}
+
 		this->energy -= encounter_penalty;
 		closest->energy -= encounter_penalty;
 
