@@ -117,12 +117,15 @@ void LifeForm::eat(SmartPointer<LifeForm> victim) {
 		return;
 	}
 
-	this->energy -= eat_cost_function(this->energy, victim->energy);
+	double new_energy = this->energy - 
+			eat_cost_function(this->energy, victim->energy);
 
 	// eating unsuccessful (TODO: is this the correct behavior?)
-	if (this->energy < ::min_energy) {
+	if (new_energy < ::min_energy) {
 		return;
 	}
+
+	this->energy = new_energy;
 
 	double energy_earned = victim->energy * eat_efficiency;
 
