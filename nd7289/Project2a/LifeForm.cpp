@@ -76,7 +76,9 @@ void LifeForm::compute_next_move(void) {
 
 	// if speed is ~ 0.0
 	if (speed <= std::numeric_limits<double>::epsilon()) {
-		this->border_cross_event = nullptr;
+		if (this->border_cross_event && this->border_cross_event->is_active()) {
+			this->border_cross_event->cancel();
+		}
 		return;
 	}
 
@@ -98,7 +100,9 @@ void LifeForm::compute_next_move(void) {
 // and schedule the next movement event
 
 void LifeForm::region_resize(void) {
-	this->border_cross_event->cancel();
+	if (this->border_cross_event && this->border_cross_event->is_active()) {
+		this->border_cross_event->cancel();
+	}
 	this->update_position();
 	this->compute_next_move();
 }
@@ -147,53 +151,57 @@ bool LifeForm::eat_trial(SmartPointer<LifeForm> eater,
 void LifeForm::resolve_encounter(SmartPointer<LifeForm> alien) {
 	Action my_act = this->encounter(this->info_about_them(alien));
 
+	SmartPointer<LifeForm> self = SmartPointer<LifeForm>(this);
+
 	Action alien_act = alien->encounter(
-		alien->info_about_them(SmartPointer<LifeForm>(this)));
+		alien->info_about_them(self));
 
 	if (my_act == Action::LIFEFORM_EAT && alien_act == Action::LIFEFORM_EAT) {
-		bool me_succeed = LifeForm::eat_trial(SmartPointer<LifeForm>(this), alien);
-		bool alien_succeed = LifeForm::eat_trial(alien, SmartPointer<LifeForm>(this));
+		bool me_succeed = LifeForm::eat_trial(self, alien);
+		bool alien_succeed = LifeForm::eat_trial(alien, self);
 
 		// break the tie based on the strategy
 		if (me_succeed && alien_succeed) {
 			if (::encounter_strategy == EncounterResolver::EVEN_MONEY) {
-				drand48() > 0.5 ? this->eat(alien) : alien->eat(SmartPointer<LifeForm>(this));
+				drand48() > 0.5 ? this->eat(alien) : alien->eat(self);
 
 			} else if (::encounter_strategy == EncounterResolver::BIG_GUY_WINS) {
 				this->energy > alien->energy ? this->eat(alien) : 
-									alien->eat(SmartPointer<LifeForm>(this));
+									alien->eat(self);
 
 			} else if (::encounter_strategy == EncounterResolver::UNDERDOG_IS_HERE) {
 				this->energy < alien->energy ? this->eat(alien) : 
-									alien->eat(SmartPointer<LifeForm>(this));
+									alien->eat(self);
 
 			} else if (::encounter_strategy == EncounterResolver::FASTER_GUY_WINS) {
 				this->speed > alien->speed ? this->eat(alien) : 
-									alien->eat(SmartPointer<LifeForm>(this));
+									alien->eat(self);
 
 			} else if (::encounter_strategy == EncounterResolver::SLOWER_GUY_WINS) {
 				this->speed < alien->speed ? this->eat(alien) : 
-									alien->eat(SmartPointer<LifeForm>(this));
+									alien->eat(self);
 			}
 
 		} else if (me_succeed) {
 			this->eat(alien);
 
 		} else if (alien_succeed) {
-			alien->eat(SmartPointer<LifeForm>(this));
+			alien->eat(self);
 		}
 
 	} else if (my_act == Action::LIFEFORM_EAT && alien_act == Action::LIFEFORM_IGNORE) {
-		if (LifeForm::eat_trial(SmartPointer<LifeForm>(this), alien)) {
+		if (LifeForm::eat_trial(self, alien)) {
 			this->eat(alien);
 		}
 		
 	} else if (my_act == Action::LIFEFORM_IGNORE && alien_act == Action::LIFEFORM_EAT) {
-		if (LifeForm::eat_trial(alien, SmartPointer<LifeForm>(this))) {
-			alien->eat(SmartPointer<LifeForm>(this));
+		if (LifeForm::eat_trial(alien, self)) {
+			alien->eat(self);
 		}
 
 	}
+
+	std::cout << "ENCOUNTERING DONE!!!!\n";
 	// else do nothing special (just return)
 }
 
@@ -238,10 +246,11 @@ void LifeForm::border_cross(void) {
 	// since it has already been occured and therefore canceled
 
 	this->update_position();
-	this->compute_next_move();
 
 	// we need to check for encounters here
 	this->check_encounter();
+
+	this->compute_next_move();
 }
 
 void LifeForm::update_position(void) {
@@ -310,6 +319,8 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 		return;
 	}
 
+	this->update_position();
+
 	double time_elapsed = Event::now() - this->reproduce_time;
 
 	if (time_elapsed < ::min_reproduce_time) {
@@ -324,7 +335,7 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 
 	double child_distance = 0.90 * ::reproduce_dist;
 
-	std::vector<Point> candidates{};
+	/*std::vector<Point> candidates{};
 
 	candidates.push_back(Point{this->pos.xpos + child_distance, this->pos.ypos});
 	candidates.push_back(Point{this->pos.xpos, this->pos.ypos + child_distance});
@@ -346,20 +357,45 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 
 	if (!child_pos) {
 		return;
-	}
+	}*/
 
+    SmartPointer<LifeForm> nearest;
+    int cnt = 0;
+    bool not_found = false;
+
+    do {
+    	if (cnt > 5) {
+			not_found = true;
+    		break;
+    	}
+        creature->pos.ypos = drand48() * grid_max * 0.75 + grid_max / 8.0;
+        creature->pos.xpos = drand48() * grid_max * 0.75 + grid_max / 8.0;
+        nearest = space.closest(creature->pos);
+        std::cout<<"*******************INSIDE THE LOOP\n";
+        cnt++;
+    } while (nearest && nearest->position().distance(creature->position())
+        <= encounter_distance);
+
+    if (not_found) {
+    	return;
+    }
+
+    std::cout<<"*******************HERE1\n";
+
+    /*creature->start_point = creature->pos;
+
+    space.insert(creature, creature->pos,
+        [creature](void) { creature->region_resize(); });
+
+    creature->is_alive = true;
+    creature->energy = new_energy;
+    (void) new Event(age_frequency, [creature]() { creature->age(); });
+    this->energy = new_energy;
+
+    this->reproduce_time = Event::now();*/
+
+    std::cout<<"*******************HERE2\n";
 	// assert(!creature->space.is_out_of_bounds(*child_pos));
-
-	/*creature->space.insert(creature, creature->pos, [creature](void) { creature->region_resize(); });
-	(void) new Event(age_frequency, [creature](void) { creature->age(); });
-	creature->is_alive = true;
-
-	creature->pos = *child_pos;
-	creature->energy = new_energy;
-	
-	this->energy = new_energy;*/
-
-	// TODO: wtf is the 3rd argument?! :O
 }
 
 // find the closest nearby object. update its position. if after update the distance is still
