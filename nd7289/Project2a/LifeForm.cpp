@@ -196,19 +196,15 @@ void LifeForm::resolve_encounter(SmartPointer<LifeForm> alien) {
 }
 
 void LifeForm::check_encounter(void) {
-	if (!this->is_alive) {
-		return;
-	}
+	if (!this->is_alive) { return; }
 
-	// we are assuming there should be a closest!
-
+	// we assume there should be a closest point in the simulation.
+	// i.e., there are at least one other creature present.
 	SmartPointer<LifeForm> closest = this->space.closest(this->pos);
 	
 	closest->update_position();
 
-	if (!this->is_alive) {
-		return;
-	}
+	if (!this->is_alive) { return; }
 
 	// TODO: check for the condition
 	if (this->pos.distance(closest->pos) > ::encounter_distance) {
@@ -249,16 +245,14 @@ void LifeForm::border_cross(void) {
 }
 
 void LifeForm::update_position(void) {
-	if (!this->is_alive) {
-		return;
-	}
+	if (!this->is_alive) { return; }
 
 	double time_elapsed = Event::now() - this->update_time;
 
-	// TODO? shall we check for speed == 0?
-	if (time_elapsed < ::min_delta_time || 
-		speed <= std::numeric_limits<double>::epsilon()) {
-		return;
+	// if the time passed since we updated position
+	// is negligible, no need to update again, just return!
+	if (time_elapsed < ::min_delta_time) { 
+		return; 
 	}
 
 	// charge for energy consumed! 
@@ -270,8 +264,7 @@ void LifeForm::update_position(void) {
 		return;
 	}
 
-	this->update_time = Event::now();
-
+	// calculate the dela point
 	double distance = time_elapsed * this->speed;
 	double deltaX = distance * cos(this->course);
 	double deltaY = distance * sin(this->course);
@@ -283,8 +276,15 @@ void LifeForm::update_position(void) {
 		return;
 	}
 
+	// update the last updated time
+	// TODO: updating the place of this line to the end causes 
+	// the program to crash! (in QTree Line 620)
+	this->update_time = Event::now();
+
 	// update the position in the QTree
-	this->space.update_position(this->pos, this->pos + delta);
+	if (this->pos != this->pos + delta) {
+		LifeForm::space.update_position(this->pos, this->pos + delta);
+	}
 
 	// update the position in the LifeForm obj
 	this->pos += delta;
