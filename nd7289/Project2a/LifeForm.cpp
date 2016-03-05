@@ -133,6 +133,7 @@ void LifeForm::eat(SmartPointer<LifeForm> victim) {
 								{ self->gain_energy(energy_to_earn); });
 }
 
+// returns if eater is willing to eat victim
 bool LifeForm::eat_trial(SmartPointer<LifeForm> eater, 
 		SmartPointer<LifeForm> victim) {
 
@@ -145,11 +146,13 @@ bool LifeForm::eat_trial(SmartPointer<LifeForm> eater,
 void LifeForm::resolve_encounter(SmartPointer<LifeForm> alien) {
 	Action my_act = this->encounter(this->info_about_them(alien));
 
+	// my action (EAT or IGNORE)
 	SmartPointer<LifeForm> self = SmartPointer<LifeForm>(this);
 
-	Action alien_act = alien->encounter(
-		alien->info_about_them(self));
+	// alien's action
+	Action alien_act = alien->encounter(alien->info_about_them(self));
 
+	// if both sides are willing to eat each other
 	if (my_act == Action::LIFEFORM_EAT && alien_act == Action::LIFEFORM_EAT) {
 		bool me_succeed = LifeForm::eat_trial(self, alien);
 		bool alien_succeed = LifeForm::eat_trial(alien, self);
@@ -160,20 +163,16 @@ void LifeForm::resolve_encounter(SmartPointer<LifeForm> alien) {
 				drand48() > 0.5 ? this->eat(alien) : alien->eat(self);
 
 			} else if (::encounter_strategy == EncounterResolver::BIG_GUY_WINS) {
-				this->energy > alien->energy ? this->eat(alien) : 
-									alien->eat(self);
+				this->energy > alien->energy ? this->eat(alien) : alien->eat(self);
 
 			} else if (::encounter_strategy == EncounterResolver::UNDERDOG_IS_HERE) {
-				this->energy < alien->energy ? this->eat(alien) : 
-									alien->eat(self);
+				this->energy < alien->energy ? this->eat(alien) : alien->eat(self);
 
 			} else if (::encounter_strategy == EncounterResolver::FASTER_GUY_WINS) {
-				this->speed > alien->speed ? this->eat(alien) : 
-									alien->eat(self);
+				this->speed > alien->speed ? this->eat(alien) : alien->eat(self);
 
 			} else if (::encounter_strategy == EncounterResolver::SLOWER_GUY_WINS) {
-				this->speed < alien->speed ? this->eat(alien) : 
-									alien->eat(self);
+				this->speed < alien->speed ? this->eat(alien) : alien->eat(self);
 			}
 
 		} else if (me_succeed) {
@@ -202,16 +201,16 @@ void LifeForm::check_encounter(void) {
 	// i.e., there are at least one other creature present.
 	SmartPointer<LifeForm> closest = this->space.closest(this->pos);
 	
+	// update the closest point's position
 	closest->update_position();
 
 	if (!this->is_alive) { return; }
 
-	// TODO: check for the condition
+	// if still in encounter_distance
 	if (this->pos.distance(closest->pos) > ::encounter_distance) {
 		return;
 	}
 
-	// DIFFERENT WITH CHENGUANG
 	this->energy -= encounter_penalty;
 	closest->energy -= encounter_penalty;
 
@@ -307,22 +306,18 @@ void LifeForm::age(void) {
 	new Event(::age_frequency, [self](void) { self->age(); });
 }
 
+// generates a random number in range
 double my_rand(double min, double max) {
     double f = (double)rand() / RAND_MAX;
     return min + f * (max - min);
 }
 
-// DOES ALGAE REPRODUCE?
 void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
-	if (!this->is_alive) {
-		return;
-	}
+	if (!this->is_alive) { return; }
 
 	this->update_position();
 
-	if (!this->is_alive) {
-		return;
-	}
+	if (!this->is_alive) { return; }
 
 	double time_elapsed = Event::now() - this->reproduce_time;
 
@@ -330,9 +325,10 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 		return;
 	}
 
+	// the new energy for both parent and child
 	double new_energy = (1.0 - ::reproduce_cost) * this->energy / 2.0;
 
-	// maybe redundant (TODO)
+	// TODO: maybe redundant??
 	if (new_energy < ::min_energy) {
 		return;
 	}
@@ -343,7 +339,7 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 
 	bool safe_pos_found = false;
 
-	for (int i=0; i < 5; i++) {
+	for (uint32_t i=0; i < 5; i++) {
 		double child_radius = my_rand(::encounter_distance, ::reproduce_dist);
 		double child_angle = drand48() * 2.0 * M_PI;
 		double deltaX = child_radius * cos(child_angle);
@@ -351,6 +347,7 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 
 		Point child_pos = this->pos + Point(deltaX, deltaY);
 
+		// if child pos is out of bounds or is already occupied
 		if (LifeForm::space.is_out_of_bounds(child_pos) 
 			|| LifeForm::space.is_occupied(child_pos)) {
 			continue;
@@ -358,6 +355,7 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 
 		SmartPointer<LifeForm> closest_to_child = space.closest(child_pos);
 
+		// if child pos is in encounter distance with someone else
 		if (child_pos.distance(closest_to_child->position()) < ::encounter_distance) {
 			continue;
 		}
@@ -373,38 +371,32 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 		return;
 	}
 
-    std::cout<<"*******************HERE1\n";
-
     creature->start_point = creature->pos;
 
+    // inser the child into QTree (with region_resize() callback function)
     space.insert(creature, creature->pos,
         [creature](void) { creature->region_resize(); });
 
-    creature->energy = new_energy;
+    // create an age event
     (void) new Event(age_frequency, [creature]() { creature->age(); });
+
+    // mark creature as alive
     creature->is_alive = true;
 
+    creature->energy = new_energy;
+    
     this->energy = new_energy;
 
     this->reproduce_time = Event::now();
-
-    std::cout<<"*******************HERE2\n";
-	// assert(!creature->space.is_out_of_bounds(*child_pos));
 }
+
 
 // find the closest nearby object. update its position. if after update the distance is still
 // in the collision distance, we have a collision. If not, no collision, skip.
-
-// perceive -> don't need to update_position
-
-// TODO: Where exactly do we need to update our own position? [GENERAL]
-// TODO: Where the heck is perceive being invoked? (may need to check if alive there...)
+// Also, don't need to update_position and can work with stale data
 ObjList LifeForm::perceive(double radius) {
 	// only alive objects can perceive 
-	// {TODO: shall this be checked? (is return val correct?)}
-	if (!this->is_alive) {
-		return ObjList{};
-	}
+	if (!this->is_alive) { return ObjList{}; }
 
 	bound(radius, ::min_perceive_range, ::max_perceive_range);
 
@@ -414,9 +406,6 @@ ObjList LifeForm::perceive(double radius) {
 		this->die();
 		return ObjList{};
 	}
-
-	// TODO: do we need to update our own position?
-	// this->update_position();
 
 	// list of obj infos in the given radius in QTree
 	ObjList items_perceived{};
