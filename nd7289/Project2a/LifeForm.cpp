@@ -30,121 +30,107 @@ ObjInfo LifeForm::info_about_them(SmartPointer<LifeForm> neighbor) {
 	return info;
 }
 
-//TODO [GENERAL]: when shall we set the 1st border_cross_event?
-// Should we do it in reproduce for child?
-
 // Note: course can be negative!
 void LifeForm::set_course(double course) {
-	if (!this->is_alive) {
-		return;
-	}
+	if (!this->is_alive) { return; }
 
-	// if there is a border_cross_event:
-	if (this->border_cross_event && this->border_cross_event->is_active()) {
-		this->border_cross_event->cancel();	// cancel the existing event
-		update_position();					// update the position
+	// note that border_cross_event may be nullptr
+	// but in C++ you can legally invoke a method
+	// on nullptr and in fact in cancel body we
+	// are checking if (this) {...}
+	this->border_cross_event->cancel();
 
-		if (!this->is_alive) {
-			return;
-		}
-	}
+	// update your position
+	this->update_position();
 
+	// check if still alive
+	if (!this->is_alive) { return; }
+
+	// set course
 	this->course = course;
 
+	// calculate next move
 	this->compute_next_move();
 }
 
-// Note: Speed is non-negative
+// Note: Speed cannot be negative
 void LifeForm::set_speed(double speed) {
-	if (!this->is_alive) {
-		return;
-	}
+	if (!this->is_alive || speed < 0) { return; }
 
-	// if there is a border_cross_event:
-	if (this->border_cross_event && this->border_cross_event->is_active()) {
-		this->border_cross_event->cancel();	// cancel the existing event
-		update_position();					// update the position
-		if (!this->is_alive) {
-			return;
-		}
-	}
+	this->border_cross_event->cancel();
 
-	// update the speed
+	this->update_position();
+
+	if (!this->is_alive) { return; }
+
+	// bound the speed with ::max_speed
 	this->speed = std::min(speed, ::max_speed);
 
 	this->compute_next_move();
 }
 
-// TODO: In general, check if we are working based on the updated position!!
+// update the border_cross event
 void LifeForm::compute_next_move(void) {
-	if (!this->is_alive) {
-		return;
-	}
+	if (!this->is_alive) { return; }
 
-	// if speed is ~ 0.0
+	// if speed is ~ 0.0: you will never reach another border!
 	if (speed <= std::numeric_limits<double>::epsilon()) {
-		if (this->border_cross_event && this->border_cross_event->is_active()) {
-			this->border_cross_event->cancel();
-		}
+		this->border_cross_event->cancel();
 		return;
 	}
 
-	// based on the current speed, compute the distance/time to the boarder (asking for QTree)
-	double distanceToBorder = LifeForm::space.distance_to_edge(this->pos, this->course);
-	double time_to_reach_border = distanceToBorder / speed;
+	// based on the current speed, compute the distance/time to the boarder (asking QTree)
+	double distance_to_border = LifeForm::space.distance_to_edge(this->pos, this->course);
+	double time_to_reach_border = distance_to_border / speed;
 
-	// add the threshold to avoid the floating point error
+	// add the threshold to avoid the floating point error [to ensure you will cross the
+	// border and not getting closer over-and-over again in a semi-infinite loop!]
 	time_to_reach_border += Point::tolerance;
 
-	// create a new border cross event
+	// create a new border_cross event
 	SmartPointer<LifeForm> self = SmartPointer<LifeForm>(this);
 	this->border_cross_event = 
 		new Event(time_to_reach_border, [self](void) { self->border_cross(); });
 }
 
-// What you will want to do is have region_resize cancel 
-// any pending border crossing events, update your position, 
-// and schedule the next movement event
-
 void LifeForm::region_resize(void) {
-	std::cout << "stuck!!!\n";
-	if (this->border_cross_event && this->border_cross_event->is_active()) {
-		this->border_cross_event->cancel();
-	}
+	this->border_cross_event->cancel();
 	this->update_position();
 	this->compute_next_move();
 }
 
 void LifeForm::gain_energy(double e) {
-	if (!this->is_alive) {
-		return;
-	}
+	if (!this->is_alive) { return; }
 
 	this->energy += e;
 }
 
+// this method implementation assumes eat 
+// has been successful when you enter the body 
 void LifeForm::eat(SmartPointer<LifeForm> victim) {
 	// if either side is dead, no eating happens
-	if (!this->is_alive || !victim->is_alive) {
-		return;
-	}
+	if (!this->is_alive || !victim->is_alive) { return; }
 
+	// energy that the eater will earn after digestion_time
+	double energy_to_earn = victim->energy * ::eat_efficiency;
+
+	// victim shoud die regardless of the eater's energy
+	victim->die();
+
+	// the energy that eater pays for eating...
 	this->energy -= eat_cost_function(this->energy, victim->energy);
 
+	// eater should die if it does not have enough energy
 	if (this->energy < ::min_energy) {
 		this->die();
-		victim->die();
 		return;
 	}
-
-	double energy_earned = victim->energy * eat_efficiency;
 
 	SmartPointer<LifeForm> self = SmartPointer<LifeForm>(this);
 
-	new Event(::digestion_time, [self, energy_earned](void) 
-								{ self->gain_energy(energy_earned); });
-
-	victim->die();
+	// set up the gain_energy event
+	new Event(::digestion_time, [self, energy_to_earn](void) 
+								{ self->gain_energy(energy_to_earn); });
 }
 
 bool LifeForm::eat_trial(SmartPointer<LifeForm> eater, 
@@ -206,11 +192,7 @@ void LifeForm::resolve_encounter(SmartPointer<LifeForm> alien) {
 		if (LifeForm::eat_trial(alien, self)) {
 			alien->eat(self);
 		}
-
 	}
-
-	std::cout << "ENCOUNTERING DONE!!!!\n";
-	// else do nothing special (just return)
 }
 
 void LifeForm::check_encounter(void) {
@@ -273,10 +255,8 @@ void LifeForm::update_position(void) {
 
 	double time_elapsed = Event::now() - this->update_time;
 
-	const double time_tolerance = 1.0e-3; // TODO: find the actual const!!!
-
 	// TODO? shall we check for speed == 0?
-	if (time_elapsed < time_tolerance || 
+	if (time_elapsed < ::min_delta_time || 
 		speed <= std::numeric_limits<double>::epsilon()) {
 		return;
 	}
@@ -426,12 +406,7 @@ ObjList LifeForm::perceive(double radius) {
 		return ObjList{};
 	}
 
-	if (radius > ::max_perceive_range) {
-		radius = ::max_perceive_range;
-
-	} else if (radius < ::min_perceive_range) {
-		radius = ::min_perceive_range;
-	}
+	bound(radius, ::min_perceive_range, ::max_perceive_range);
 
 	this->energy -= perceive_cost(radius);
 
