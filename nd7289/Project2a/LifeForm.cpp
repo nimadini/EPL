@@ -43,6 +43,10 @@ void LifeForm::set_course(double course) {
 	if (this->border_cross_event && this->border_cross_event->is_active()) {
 		this->border_cross_event->cancel();	// cancel the existing event
 		update_position();					// update the position
+
+		if (!this->is_alive) {
+			return;
+		}
 	}
 
 	this->course = course;
@@ -60,6 +64,9 @@ void LifeForm::set_speed(double speed) {
 	if (this->border_cross_event && this->border_cross_event->is_active()) {
 		this->border_cross_event->cancel();	// cancel the existing event
 		update_position();					// update the position
+		if (!this->is_alive) {
+			return;
+		}
 	}
 
 	// update the speed
@@ -100,6 +107,7 @@ void LifeForm::compute_next_move(void) {
 // and schedule the next movement event
 
 void LifeForm::region_resize(void) {
+	std::cout << "stuck!!!\n";
 	if (this->border_cross_event && this->border_cross_event->is_active()) {
 		this->border_cross_event->cancel();
 	}
@@ -216,11 +224,16 @@ void LifeForm::check_encounter(void) {
 	
 	closest->update_position();
 
+	if (!this->is_alive) {
+		return;
+	}
+
 	// TODO: check for the condition
 	if (this->pos.distance(closest->pos) > ::encounter_distance) {
 		return;
 	}
 
+	// DIFFERENT WITH CHENGUANG
 	this->energy -= encounter_penalty;
 	closest->energy -= encounter_penalty;
 
@@ -314,6 +327,12 @@ void LifeForm::age(void) {
 	new Event(::age_frequency, [self](void) { self->age(); });
 }
 
+double my_rand(double min, double max) {
+    double f = (double)rand() / RAND_MAX;
+    return min + f * (max - min);
+}
+
+// DOES ALGAE REPRODUCE?
 void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 	if (!this->is_alive) {
 		return;
@@ -321,78 +340,73 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 
 	this->update_position();
 
+	if (!this->is_alive) {
+		return;
+	}
+
 	double time_elapsed = Event::now() - this->reproduce_time;
 
 	if (time_elapsed < ::min_reproduce_time) {
 		return;
 	}
 
-	double new_energy = (1.0 - ::reproduce_cost) * this->energy / 2.0 * 100.0;
+	double new_energy = (1.0 - ::reproduce_cost) * this->energy / 2.0;
 
+	// maybe redundant (TODO)
 	if (new_energy < ::min_energy) {
 		return;
 	}
 
-	double child_distance = 0.90 * ::reproduce_dist;
+	if (::encounter_distance >= ::reproduce_dist) {
+		return;
+	}
 
-	/*std::vector<Point> candidates{};
+	bool safe_pos_found = false;
 
-	candidates.push_back(Point{this->pos.xpos + child_distance, this->pos.ypos});
-	candidates.push_back(Point{this->pos.xpos, this->pos.ypos + child_distance});
-	candidates.push_back(Point{this->pos.xpos + child_distance, this->pos.ypos + child_distance});
-	candidates.push_back(Point{this->pos.xpos - child_distance, this->pos.ypos - child_distance});
+	for (int i=0; i < 5; i++) {
+		double child_radius = my_rand(::encounter_distance, ::reproduce_dist);
+		double child_angle = drand48() * 2.0 * M_PI;
+		double deltaX = child_radius * cos(child_angle);
+		double deltaY = child_radius * sin(child_angle);
 
-	Point* child_pos = nullptr;
+		Point child_pos = this->pos + Point(deltaX, deltaY);
 
-	for (auto & candidate : candidates) {
-		if (creature->space.is_out_of_bounds(candidate)) {
+		if (LifeForm::space.is_out_of_bounds(child_pos) 
+			|| LifeForm::space.is_occupied(child_pos)) {
 			continue;
 		}
 
-		if (!this->space.is_occupied(candidate)) {
-			child_pos = &candidate;
-			break;
+		SmartPointer<LifeForm> closest_to_child = space.closest(child_pos);
+
+		if (child_pos.distance(closest_to_child->position()) < ::encounter_distance) {
+			continue;
 		}
+
+		safe_pos_found = true;
+
+		creature->pos = child_pos;
+
+		break;
 	}
 
-	if (!child_pos) {
+	if (!safe_pos_found) {
 		return;
-	}*/
-
-    SmartPointer<LifeForm> nearest;
-    int cnt = 0;
-    bool not_found = false;
-
-    do {
-    	if (cnt > 5) {
-			not_found = true;
-    		break;
-    	}
-        creature->pos.ypos = drand48() * grid_max * 0.75 + grid_max / 8.0;
-        creature->pos.xpos = drand48() * grid_max * 0.75 + grid_max / 8.0;
-        nearest = space.closest(creature->pos);
-        std::cout<<"*******************INSIDE THE LOOP\n";
-        cnt++;
-    } while (nearest && nearest->position().distance(creature->position())
-        <= encounter_distance);
-
-    if (not_found) {
-    	return;
-    }
+	}
 
     std::cout<<"*******************HERE1\n";
 
-    /*creature->start_point = creature->pos;
+    creature->start_point = creature->pos;
 
     space.insert(creature, creature->pos,
         [creature](void) { creature->region_resize(); });
 
-    creature->is_alive = true;
     creature->energy = new_energy;
     (void) new Event(age_frequency, [creature]() { creature->age(); });
+    creature->is_alive = true;
+
     this->energy = new_energy;
 
-    this->reproduce_time = Event::now();*/
+    this->reproduce_time = Event::now();
 
     std::cout<<"*******************HERE2\n";
 	// assert(!creature->space.is_out_of_bounds(*child_pos));
