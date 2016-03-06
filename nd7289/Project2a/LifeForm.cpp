@@ -328,8 +328,8 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
 	// the new energy for both parent and child
 	double new_energy = (1.0 - ::reproduce_cost) * this->energy / 2.0;
 
-	// TODO: maybe redundant??
 	if (new_energy < ::min_energy) {
+		this->die();
 		return;
 	}
 
@@ -390,10 +390,6 @@ void LifeForm::reproduce(SmartPointer<LifeForm> creature) {
     this->reproduce_time = Event::now();
 }
 
-
-// find the closest nearby object. update its position. if after update the distance is still
-// in the collision distance, we have a collision. If not, no collision, skip.
-// Also, don't need to update_position and can work with stale data
 ObjList LifeForm::perceive(double radius) {
 	// only alive objects can perceive 
 	if (!this->is_alive) { return ObjList{}; }
