@@ -11,6 +11,7 @@ protected:
   void spawn(void);
   void hunt(void);
   void startup(void);
+  Action proceed_to_eat();
   Event* hunt_event;
 public:
   Nima(void);

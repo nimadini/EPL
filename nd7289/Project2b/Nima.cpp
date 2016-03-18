@@ -24,18 +24,36 @@ String Nima::species_name(void) const
     return "Nima";
 }
 
+Action proceed_to_eat() {
+    hunt_event->cancel();
+    SmartPointer<Nima> self = SmartPointer<Nima>(this);
+    hunt_event = new Event(0.0, [self](void) { self->hunt(); });
+    return LIFEFORM_EAT;
+}
+
 Action Nima::encounter(const ObjInfo& info)
 {
+    // always go for algaes
+    // a better strategy is to check if there are enemies nearby!
+    if (info.species == "Algae" && info.their_speed == 0.0) {
+        return proceed_to_eat();
+    }
+
     if (info.species == species_name()) {
+        // ensure it's one of us!!
+
         /* don't be cannibalistic */
         set_course(info.bearing + M_PI);
         return LIFEFORM_IGNORE;
-    }
-    else {
-        hunt_event->cancel();
-        SmartPointer<Nima> self = SmartPointer<Nima>(this);
-        hunt_event = new Event(0.0, [self](void) { self->hunt(); });
-        return LIFEFORM_EAT;
+    
+    } else {
+        // if our our health is less than the opponent!
+        // Note: health is a ratio! (energy/start_energy)
+        if (this->health() < info.health) {
+            return LIFEFORM_IGNORE;
+        }
+
+        return proceed_to_eat();
     }
 }
 
@@ -77,6 +95,10 @@ SmartPointer<LifeForm> Nima::create(void) {
 }
 
 
+// TODO: you can override all the protected methods inside LifeForm
+// lying is a good idea in this assignment!!!
+
+// TODO: need a mechanism to distinguish your own species!
 void Nima::hunt(void) {
     const String fav_food = "Algae";
 
@@ -85,6 +107,7 @@ void Nima::hunt(void) {
 
     ObjList prey = perceive(20.0);
 
+    // best_d is defined to be the nearest point!
     double best_d = HUGE;
     for (ObjList::iterator i = prey.begin(); i != prey.end(); ++i) {
         if ((*i).species == fav_food) {
