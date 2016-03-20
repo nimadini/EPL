@@ -24,7 +24,7 @@ String Nima::species_name(void) const
     return "Nima";
 }
 
-Action proceed_to_eat() {
+Action Nima::proceed_to_eat() {
     hunt_event->cancel();
     SmartPointer<Nima> self = SmartPointer<Nima>(this);
     hunt_event = new Event(0.0, [self](void) { self->hunt(); });
@@ -96,7 +96,7 @@ SmartPointer<LifeForm> Nima::create(void) {
 
 
 // TODO: you can override all the protected methods inside LifeForm
-// lying is a good idea in this assignment!!!
+// lying is a good idea in this assignment!
 
 // TODO: need a mechanism to distinguish your own species!
 void Nima::hunt(void) {
