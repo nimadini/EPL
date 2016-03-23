@@ -122,7 +122,7 @@ void Nima::hunt(void) {
     hunt_event = nullptr;
     if (health() == 0.0) { return; } // we died
 
-    ObjList prey = perceive(20.0);
+    ObjList prey = perceive(10.0 + 10.0 * drand48());
 
     double closest_algae = HUGE;
     double closest_creature = HUGE;
@@ -140,7 +140,7 @@ void Nima::hunt(void) {
             }
         }
 
-        else if (!algae_found) {
+        else if (!algae_found && (*i).species != "Nima") {
             if (closest_creature > (*i).distance) {
                 bearing = (*i).bearing;
                 closest_creature = (*i).distance;
@@ -155,5 +155,16 @@ void Nima::hunt(void) {
     SmartPointer<Nima> self = SmartPointer<Nima>(this);
     hunt_event = new Event(10.0, [self](void) { self->hunt(); });
 
-    if (health() >= 4.0) spawn();
+    
+    // broken!
+
+    /* double new_enegy = (1.0 - ::reproduce_cost) * this->health() * ::start_energy / 2.0;
+
+    std::cout << "NEW_ENERGY: " << new_enegy << "\n";
+
+    if (new_enegy > ::min_energy) {
+        spawn();
+    } */
+
+    if (health() >= 3.0 + drand48()) spawn();
 }
