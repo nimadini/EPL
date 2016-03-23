@@ -28,7 +28,10 @@ String Nima::player_name(void) const {
 }
 
 bool Nima::is_algae(const ObjInfo& info) {
-    return info.species == "Algae" && info.their_speed == 0.0;
+    return 
+        info.species == "Algae" && 
+        info.their_speed == 0.0 && 
+        info.their_course == 0.0;
 }
 
 bool Nima::is_worth_eating(const ObjInfo& info) {
@@ -79,6 +82,10 @@ Nima::Nima() {
     new Event(0, [self](void) { self->startup(); });
 }
 
+void Nima::set_speed(double speed) {
+    LifeForm::set_speed(std::ceil(speed) + 0.1015);
+}
+
 void Nima::set_course(double course) {
     LifeForm::set_course(course);
 
@@ -86,23 +93,32 @@ void Nima::set_course(double course) {
 
     SmartPointer<Nima> self = SmartPointer<Nima>(this);
     new Event(interval, [self, new_course](void) { self->set_course(new_course); });
-    interval+=10;
+    interval += 10;
 }
 
 Nima::~Nima() {}
 
+void Nima::slow_down(void) {
+    set_speed(get_speed() / 2.0);
+}
+
 void Nima::startup(void) {
     set_course(drand48() * 2.0 * M_PI);
-    set_speed(2 + 5.0 * drand48());
+
+    double ceil (double x);
+
+    set_speed(3.0 + 3.0 * drand48());
+
     SmartPointer<Nima> self = SmartPointer<Nima>(this);
     hunt_event = new Event(0, [self](void) { self->hunt(); });
+
+    new Event(50, [self](void) { self->slow_down(); });
 }
 
 void Nima::spawn(void) {
     SmartPointer<Nima> child = new Nima;
     reproduce(child);
 }
-
 
 Color Nima::my_color(void) const {
     return BLUE;
@@ -122,7 +138,15 @@ void Nima::hunt(void) {
     hunt_event = nullptr;
     if (health() == 0.0) { return; } // we died
 
-    ObjList prey = perceive(10.0 + 10.0 * drand48());
+    double perceive_radius = 18.0 + 2.0 * drand48();
+
+    if (this->health() * ::start_energy - ::perceive_cost(perceive_radius) < ::min_energy) {
+        SmartPointer<Nima> self = SmartPointer<Nima>(this);
+        hunt_event = new Event(9.0 + 1.0 * drand48(), [self](void) { self->hunt(); });
+        return;
+    }
+
+    ObjList prey = perceive(perceive_radius);
 
     double closest_algae = HUGE;
     double closest_creature = HUGE;
@@ -153,7 +177,7 @@ void Nima::hunt(void) {
     }
 
     SmartPointer<Nima> self = SmartPointer<Nima>(this);
-    hunt_event = new Event(10.0, [self](void) { self->hunt(); });
+    hunt_event = new Event(9.0 + 1.0 * drand48(), [self](void) { self->hunt(); });
 
     
     // broken!

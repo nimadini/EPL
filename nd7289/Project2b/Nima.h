@@ -14,8 +14,10 @@ protected:
   void startup(void);
   bool is_worth_eating(const ObjInfo& info);
   static bool is_algae(const ObjInfo& info);
+  void slow_down(void);
   long interval = 10;
   void set_course(double);
+  void set_speed(double);
   Event* hunt_event;
 public:
   Nima(void);
