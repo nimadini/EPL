@@ -2,6 +2,7 @@
 #define _Nima_h 1
 
 #include <memory>
+#include <inttypes.h>
 #include "LifeForm.h"
 #include "Init.h"
 
@@ -11,7 +12,10 @@ protected:
   void spawn(void);
   void hunt(void);
   void startup(void);
-  Action proceed_to_eat();
+  bool is_worth_eating(const ObjInfo& info);
+  static bool is_algae(const ObjInfo& info);
+  long interval = 10;
+  void set_course(double);
   Event* hunt_event;
 public:
   Nima(void);
@@ -19,6 +23,7 @@ public:
   Color my_color(void) const;   // defines LifeForm::my_color
   static SmartPointer<LifeForm> create(void);
   virtual std::string species_name(void) const;
+  virtual std::string player_name(void) const;
   virtual Action encounter(const ObjInfo&);
   friend class Initializer<Nima>;
 };

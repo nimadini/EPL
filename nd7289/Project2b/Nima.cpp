@@ -19,42 +19,50 @@ using String = std::string;
 
 Initializer<Nima> __Nima_initializer;
 
-String Nima::species_name(void) const
-{
+String Nima::species_name(void) const {
     return "Nima";
 }
 
-Action Nima::proceed_to_eat() {
-    hunt_event->cancel();
-    SmartPointer<Nima> self = SmartPointer<Nima>(this);
-    hunt_event = new Event(0.0, [self](void) { self->hunt(); });
-    return LIFEFORM_EAT;
+String Nima::player_name(void) const {
+    return "nd7289";
 }
 
-Action Nima::encounter(const ObjInfo& info)
-{
+bool Nima::is_algae(const ObjInfo& info) {
+    return info.species == "Algae" && info.their_speed == 0.0;
+}
+
+bool Nima::is_worth_eating(const ObjInfo& info) {
     // always go for algaes
-    // a better strategy is to check if there are enemies nearby!
-    if (info.species == "Algae" && info.their_speed == 0.0) {
-        return proceed_to_eat();
+    if (Nima::is_algae(info)) {
+        return true;
+    }
+
+    if (info.species == "Craig") {
+        return true;
     }
 
     if (info.species == species_name()) {
-        // ensure it's one of us!!
-
         /* don't be cannibalistic */
         set_course(info.bearing + M_PI);
-        return LIFEFORM_IGNORE;
-    
-    } else {
-        // if our our health is less than the opponent!
-        // Note: health is a ratio! (energy/start_energy)
-        if (this->health() < info.health) {
-            return LIFEFORM_IGNORE;
-        }
-
-        return proceed_to_eat();
+        return false;
     }
+
+    if (this->health() < info.health) {
+        return false;
+    }
+
+    return true;
+}
+
+Action Nima::encounter(const ObjInfo& info) {
+    if (is_worth_eating(info)) {
+        hunt_event->cancel();
+        SmartPointer<Nima> self = SmartPointer<Nima>(this);
+        hunt_event = new Event(0.0, [self](void) { self->hunt(); });
+        return LIFEFORM_EAT;
+    }
+    
+    return LIFEFORM_IGNORE;
 }
 
 void Nima::initialize(void) {
@@ -69,6 +77,16 @@ void Nima::initialize(void) {
 Nima::Nima() {
     SmartPointer<Nima> self = SmartPointer<Nima>(this);
     new Event(0, [self](void) { self->startup(); });
+}
+
+void Nima::set_course(double course) {
+    LifeForm::set_course(course);
+
+    double new_course = this->get_course() + M_PI / 2.0;
+
+    SmartPointer<Nima> self = SmartPointer<Nima>(this);
+    new Event(interval, [self, new_course](void) { self->set_course(new_course); });
+    interval+=10;
 }
 
 Nima::~Nima() {}
@@ -94,7 +112,6 @@ SmartPointer<LifeForm> Nima::create(void) {
     return new Nima;
 }
 
-
 // TODO: you can override all the protected methods inside LifeForm
 // lying is a good idea in this assignment!
 
@@ -107,15 +124,32 @@ void Nima::hunt(void) {
 
     ObjList prey = perceive(20.0);
 
-    // best_d is defined to be the nearest point!
-    double best_d = HUGE;
+    double closest_algae = HUGE;
+    double closest_creature = HUGE;
+
+    double bearing = 0.0;
+
+    bool algae_found = false;
+
     for (ObjList::iterator i = prey.begin(); i != prey.end(); ++i) {
-        if ((*i).species == fav_food) {
-            if (best_d > (*i).distance) {
-                set_course((*i).bearing);
-                best_d = (*i).distance;
+        if (Nima::is_algae(*i)) {
+            algae_found = true;
+            if (closest_algae > (*i).distance) {
+                closest_algae = (*i).distance;
+                bearing = (*i).bearing;
             }
         }
+
+        else if (!algae_found) {
+            if (closest_creature > (*i).distance) {
+                bearing = (*i).bearing;
+                closest_creature = (*i).distance;
+            }
+        }
+    }
+
+    if (closest_algae != HUGE || closest_creature != HUGE) {
+        set_course(bearing);
     }
 
     SmartPointer<Nima> self = SmartPointer<Nima>(this);
