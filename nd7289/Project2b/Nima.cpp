@@ -120,13 +120,12 @@ void Nima::slow_down(void) {
 void Nima::startup(void) {
     set_course(drand48() * 2.0 * M_PI);
 
-    double ceil (double x);
-
     set_speed(3.0 + 3.0 * drand48());
 
     SmartPointer<Nima> self = SmartPointer<Nima>(this);
     hunt_event = new Event(0, [self](void) { self->hunt(); });
 
+    // trigger the slow_down event after 50 time units
     new Event(50, [self](void) { self->slow_down(); });
 }
 
@@ -143,10 +142,6 @@ SmartPointer<LifeForm> Nima::create(void) {
     return new Nima;
 }
 
-// TODO: you can override all the protected methods inside LifeForm
-// lying is a good idea in this assignment!
-
-// TODO: need a mechanism to distinguish your own species!
 void Nima::hunt(void) {
     const String fav_food = "Algae";
 
