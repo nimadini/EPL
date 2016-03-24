@@ -65,6 +65,10 @@ Action Nima::encounter(const ObjInfo& info) {
         hunt_event = new Event(0.0, [self](void) { self->hunt(); });
         return LIFEFORM_EAT;
     }
+
+    if (this->get_speed() > 4) {
+        this->set_speed(this->get_speed()-2);
+    }
     
     return LIFEFORM_IGNORE;
 }
