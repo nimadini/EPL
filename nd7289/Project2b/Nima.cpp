@@ -66,9 +66,13 @@ Action Nima::encounter(const ObjInfo& info) {
         return LIFEFORM_EAT;
     }
 
-    if (this->get_speed() > 4) {
+    if (this->get_speed() > 4 && drand48() < 0.5) {
         this->set_speed(this->get_speed()-2);
+
+    } else if (drand48() < 0.5) {
+        this->set_speed(this->get_speed()+1);
     }
+    
     
     return LIFEFORM_IGNORE;
 }
@@ -108,7 +112,9 @@ void Nima::set_course(double course) {
 
     SmartPointer<Nima> self = SmartPointer<Nima>(this);
     new Event(interval, [self, new_course](void) { self->set_course(new_course); });
-    interval += 10;
+
+    int threshold = ::grid_max / 3;
+    interval = (interval + 10) % threshold + 10;
 }
 
 Nima::~Nima() {}
@@ -120,7 +126,7 @@ void Nima::slow_down(void) {
 void Nima::startup(void) {
     set_course(drand48() * 2.0 * M_PI);
 
-    set_speed(3.0 + 3.0 * drand48());
+    set_speed(2.0 + 3.0 * drand48());
 
     SmartPointer<Nima> self = SmartPointer<Nima>(this);
     hunt_event = new Event(0, [self](void) { self->hunt(); });
