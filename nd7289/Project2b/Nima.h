@@ -18,6 +18,7 @@ protected:
   long interval = 10;
   void set_course(double);
   void set_speed(double);
+  bool is_friend(double);
   Event* hunt_event;
 public:
   Nima(void);

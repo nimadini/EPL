@@ -40,19 +40,20 @@ bool Nima::is_worth_eating(const ObjInfo& info) {
         return true;
     }
 
-    if (info.species == "Craig") {
-        return true;
-    }
+    // if same species and speed certification valid ignore
+    if (info.species == species_name() 
+        && is_friend(info.their_speed)) {
 
-    if (info.species == species_name()) {
         /* don't be cannibalistic */
         set_course(info.bearing + M_PI);
         return false;
     }
 
+    /* commented out: I'll take my chances of eating a larger beast! d=
+
     if (this->health() < info.health) {
         return false;
-    }
+    } */
 
     return true;
 }
@@ -80,6 +81,16 @@ void Nima::initialize(void) {
 Nima::Nima() {
     SmartPointer<Nima> self = SmartPointer<Nima>(this);
     new Event(0, [self](void) { self->startup(); });
+}
+
+bool Nima::is_friend(double speed) {
+    double fraction = speed - ((long)speed);
+
+    if ((long)(fraction * 10000) == 1015) {
+        return true;
+    }
+
+    return false;
 }
 
 void Nima::set_speed(double speed) {
