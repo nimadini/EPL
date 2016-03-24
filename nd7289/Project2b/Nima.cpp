@@ -155,6 +155,7 @@ void Nima::hunt(void) {
 
     double perceive_radius = 18.0 + 2.0 * drand48();
 
+    // if perceiving kills you, just skip it and create a new hunt event
     if (this->health() * ::start_energy - ::perceive_cost(perceive_radius) < ::min_energy) {
         SmartPointer<Nima> self = SmartPointer<Nima>(this);
         hunt_event = new Event(9.0 + 1.0 * drand48(), [self](void) { self->hunt(); });
@@ -193,7 +194,6 @@ void Nima::hunt(void) {
 
     SmartPointer<Nima> self = SmartPointer<Nima>(this);
     hunt_event = new Event(9.0 + 1.0 * drand48(), [self](void) { self->hunt(); });
-
     
     // broken!
 
