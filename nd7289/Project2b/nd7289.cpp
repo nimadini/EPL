@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string>
 
-#include "Nima.h"
+#include "nd7289.h"
 #include "CraigUtils.h"
 #include "Event.h"
 #include "ObjInfo.h"
@@ -17,28 +17,28 @@ using namespace epl;
 using namespace std;
 using String = std::string;
 
-Initializer<Nima> __Nima_initializer;
+Initializer<nd7289> __nd7289_initializer;
 
-String Nima::species_name(void) const {
+String nd7289::species_name(void) const {
     const std::string sp_name = this->sp_name;
     return sp_name;
     //return this->species_name;
 }
 
-String Nima::player_name(void) const {
+String nd7289::player_name(void) const {
     return "nd7289";
 }
 
-bool Nima::is_algae(const ObjInfo& info) {
+bool nd7289::is_algae(const ObjInfo& info) {
     return 
         info.species == "Algae" && 
         info.their_speed == 0.0 && 
         info.their_course == 0.0;
 }
 
-bool Nima::is_worth_eating(const ObjInfo& info) {
+bool nd7289::is_worth_eating(const ObjInfo& info) {
     // always go for algaes
-    /*if (Nima::is_algae(info)) {
+    /*if (nd7289::is_algae(info)) {
         return true;
     }*/
 
@@ -59,10 +59,10 @@ bool Nima::is_worth_eating(const ObjInfo& info) {
     return true;
 }
 
-Action Nima::encounter(const ObjInfo& info) {
+Action nd7289::encounter(const ObjInfo& info) {
     if (is_worth_eating(info)) {
         hunt_event->cancel();
-        SmartPointer<Nima> self = SmartPointer<Nima>(this);
+        SmartPointer<nd7289> self = SmartPointer<nd7289>(this);
         hunt_event = new Event(0.0, [self](void) { self->hunt(); });
         return LIFEFORM_EAT;
     }
@@ -78,8 +78,8 @@ Action Nima::encounter(const ObjInfo& info) {
     return LIFEFORM_IGNORE;
 }
 
-void Nima::initialize(void) {
-    LifeForm::add_creator(Nima::create, "Nima");
+void nd7289::initialize(void) {
+    LifeForm::add_creator(nd7289::create, "nd7289");
 }
 
 /*
@@ -87,12 +87,12 @@ void Nima::initialize(void) {
  * from inside the constructor!!!!
  * you must wait until the object is actually alive
  */
-Nima::Nima() {
-    SmartPointer<Nima> self = SmartPointer<Nima>(this);
+nd7289::nd7289() {
+    SmartPointer<nd7289> self = SmartPointer<nd7289>(this);
     new Event(0, [self](void) { self->startup(); });
 }
 
-bool Nima::is_friend(double speed) {
+bool nd7289::is_friend(double speed) {
     double fraction = speed - ((long)speed);
 
     if ((long)(fraction * 10000) == 1015) {
@@ -102,54 +102,54 @@ bool Nima::is_friend(double speed) {
     return false;
 }
 
-void Nima::set_speed(double speed) {
+void nd7289::set_speed(double speed) {
     LifeForm::set_speed(std::ceil(speed) + 0.1015);
 }
 
-void Nima::set_course(double course) {
+void nd7289::set_course(double course) {
     LifeForm::set_course(course);
 
     double new_course = this->get_course() + M_PI / 2.0;
 
-    SmartPointer<Nima> self = SmartPointer<Nima>(this);
+    SmartPointer<nd7289> self = SmartPointer<nd7289>(this);
     new Event(interval, [self, new_course](void) { self->set_course(new_course); });
 
     int threshold = ::grid_max / 3;
     interval = (interval + 10) % threshold + 10;
 }
 
-Nima::~Nima() {}
+nd7289::~nd7289() {}
 
-void Nima::slow_down(void) {
+void nd7289::slow_down(void) {
     set_speed(get_speed() / 2.0);
 }
 
-void Nima::startup(void) {
+void nd7289::startup(void) {
     set_course(drand48() * 2.0 * M_PI);
 
     set_speed(2.0 + 3.0 * drand48());
 
-    SmartPointer<Nima> self = SmartPointer<Nima>(this);
+    SmartPointer<nd7289> self = SmartPointer<nd7289>(this);
     hunt_event = new Event(0, [self](void) { self->hunt(); });
 
     // trigger the slow_down event after 50 time units
     new Event(50, [self](void) { self->slow_down(); });
 }
 
-void Nima::spawn(void) {
-    SmartPointer<Nima> child = new Nima;
+void nd7289::spawn(void) {
+    SmartPointer<nd7289> child = new nd7289;
     reproduce(child);
 }
 
-Color Nima::my_color(void) const {
+Color nd7289::my_color(void) const {
     return BLUE;
 }
 
-SmartPointer<LifeForm> Nima::create(void) {
-    return new Nima;
+SmartPointer<LifeForm> nd7289::create(void) {
+    return new nd7289;
 }
 
-void Nima::hunt(void) {
+void nd7289::hunt(void) {
     const String fav_food = "Algae";
 
     hunt_event = nullptr;
@@ -159,7 +159,7 @@ void Nima::hunt(void) {
 
     // if perceiving kills you, just skip it and create a new hunt event
     if (this->health() * ::start_energy - ::perceive_cost(perceive_radius) < ::min_energy) {
-        SmartPointer<Nima> self = SmartPointer<Nima>(this);
+        SmartPointer<nd7289> self = SmartPointer<nd7289>(this);
         hunt_event = new Event(8.0 + 1.0 * drand48(), [self](void) { self->hunt(); });
         return;
     }
@@ -175,7 +175,7 @@ void Nima::hunt(void) {
     bool algae_found = false;
 
     for (ObjList::iterator i = prey.begin(); i != prey.end(); ++i) {
-        if (Nima::is_algae(*i)) {
+        if (nd7289::is_algae(*i)) {
             algae_found = true;
             if (closest_algae > (*i).distance) {
                 closest_algae = (*i).distance;
@@ -201,7 +201,7 @@ void Nima::hunt(void) {
         // std::cout << "*************: " << this->sp_name << "\n";
     }
 
-    SmartPointer<Nima> self = SmartPointer<Nima>(this);
+    SmartPointer<nd7289> self = SmartPointer<nd7289>(this);
     hunt_event = new Event(8.0 + 1.0 * drand48(), [self](void) { self->hunt(); });
     
     // broken!
