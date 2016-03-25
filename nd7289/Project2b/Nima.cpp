@@ -20,7 +20,9 @@ using String = std::string;
 Initializer<Nima> __Nima_initializer;
 
 String Nima::species_name(void) const {
-    return "Nima";
+    const std::string sp_name = this->sp_name;
+    return sp_name;
+    //return this->species_name;
 }
 
 String Nima::player_name(void) const {
@@ -36,13 +38,12 @@ bool Nima::is_algae(const ObjInfo& info) {
 
 bool Nima::is_worth_eating(const ObjInfo& info) {
     // always go for algaes
-    if (Nima::is_algae(info)) {
+    /*if (Nima::is_algae(info)) {
         return true;
-    }
+    }*/
 
     // if same species and speed certification valid ignore
-    if (info.species == species_name() 
-        && is_friend(info.their_speed)) {
+    if (is_friend(info.their_speed)) {
 
         /* don't be cannibalistic */
         set_course(info.bearing + M_PI);
@@ -154,7 +155,7 @@ void Nima::hunt(void) {
     hunt_event = nullptr;
     if (health() == 0.0) { return; } // we died
 
-    double perceive_radius = 18.0 + 2.0 * drand48();
+    double perceive_radius = 18.0 + 6.0 * drand48();
 
     // if perceiving kills you, just skip it and create a new hunt event
     if (this->health() * ::start_energy - ::perceive_cost(perceive_radius) < ::min_energy) {
@@ -167,6 +168,7 @@ void Nima::hunt(void) {
 
     double closest_algae = HUGE;
     double closest_creature = HUGE;
+    std::string nearest_enemy_species = "";
 
     double bearing = 0.0;
 
@@ -181,16 +183,22 @@ void Nima::hunt(void) {
             }
         }
 
-        else if (!algae_found && (*i).species != "Nima") {
+        else if (!algae_found && !is_friend((*i).their_speed)) {
             if (closest_creature > (*i).distance) {
                 bearing = (*i).bearing;
                 closest_creature = (*i).distance;
+                nearest_enemy_species = (*i).species;
             }
         }
     }
 
     if (closest_algae != HUGE || closest_creature != HUGE) {
         set_course(bearing);
+    }
+
+    if (closest_creature != HUGE) {
+        this->sp_name = nearest_enemy_species;
+        // std::cout << "*************: " << this->sp_name << "\n";
     }
 
     SmartPointer<Nima> self = SmartPointer<Nima>(this);

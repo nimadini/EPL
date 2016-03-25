@@ -19,6 +19,7 @@ protected:
   void set_course(double);
   void set_speed(double);
   bool is_friend(double);
+  std::string sp_name = "Nima";
   Event* hunt_event;
 public:
   Nima(void);
