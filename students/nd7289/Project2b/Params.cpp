@@ -35,7 +35,7 @@ const SimTime digestion_time = 5.0;
 const double eat_efficiency = 0.95;
 
 /* the amount of energy a life form starts with */
-const double start_energy = 100.0;
+const double start_energy = 80.0;
 
 /* 
  * it costs energy to exist, stationary, isolated objects eventually die
@@ -43,7 +43,7 @@ const double start_energy = 100.0;
  * the event should subtract age_penalty units of energy from the LifeForm
  * if the energy drops below min_energy, the LifeForm should die
  */
-const double age_penalty = 10;
+const double age_penalty = 12;
 const double age_frequency = 100; // 0.1 unit of energy per unit time
 
 /* whether you eat or not, you take a penalty for colliding */
@@ -52,7 +52,7 @@ const double encounter_penalty = 5.0;
 /* the cost to move is non-linear */
 double movement_cost(double speed, double time)
 {
-  return 0.01 * pow(speed, 1.5) * time;
+  return 0.01 * pow(speed, 10.5) * time;
 }
 
 
@@ -75,7 +75,7 @@ const double min_reproduce_time = 1.0;
  * Every algae_photo_time time units, an Algae gains Algae_energy_gain
  * units of energy
  */
-const double Algae_energy_gain = 2.0;
+const double Algae_energy_gain = 8.0;
 const SimTime algae_photo_time = 5.0;
 
 /*
@@ -104,26 +104,26 @@ const double encounter_distance = 1.0;
  */
 
 double perceive_cost(double radius) {
-  return radius / 20.0;
+  return radius / 40.0;
 }
   
 /* objects must not be permitted to move faster than max_speed
  * if they do, then their speed should be set to max_speed (do not
  * kill them for trying)
  */
-const double max_speed = 10.0;
+const double max_speed = 12.0;
 
 /* objects should not be permitted to percieve more than max_perceive_range
  * or perceive less than min_percieve_range.
  * If they do, adjust their perceive range to the appropriate bound
  * (do not kill them for trying)
  */
-const double max_perceive_range = 100.0;
+const double max_perceive_range = 80.0;
 const double min_perceive_range = 2.0;
 
-const int grid_max = 500;
-const int win_x_size = 500;
-const int win_y_size = 500;
+const int grid_max = 400;
+const int win_x_size = 400;
+const int win_y_size = 400;
 
 const double min_delta_time = 1.0e-6; // minimum time between scheduling an
                                 // event and when that event can occur
