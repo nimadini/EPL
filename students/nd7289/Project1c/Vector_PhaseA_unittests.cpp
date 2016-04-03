@@ -11,7 +11,7 @@
 #define noexcept
 #endif
 
-using epl::Vector;
+using epl::vector;
 
 /*****************************************************************************************/
 // Class Instrumentation
@@ -55,7 +55,7 @@ void* operator new(size_t size){
 //TEST SUITE 1
 #if defined(PHASE_A0) | defined(PHASE_A)
 TEST(PhaseA, basic_functionality) {
-	Vector<int> x;
+	vector<int> x;
 	EXPECT_EQ(0, x.size());
 
 	x.push_back(42);
@@ -71,23 +71,23 @@ TEST(PhaseA, basic_functionality) {
 
 #if defined(PHASE_A1) | defined(PHASE_A)
 TEST(PhaseA, constructors) {
-	Vector<int> x;
+	vector<int> x;
 	EXPECT_EQ(0, x.size());
 	x.push_back(42);
-	Vector<int> y{ x };
+	vector<int> y{ x };
 	EXPECT_EQ(1, y.size());
 	EXPECT_EQ(42, y[0]);
 	y[0] = 10;
 	EXPECT_NE(10, x[0]);
 
-	Vector<int> z(10); // must use () to avoid ambiguity over initializer list
+	vector<int> z(10); // must use () to avoid ambiguity over initializer list
 	EXPECT_EQ(10, z.size());
 }
 #endif
 
 #if defined(PHASE_A2) | defined(PHASE_A)
 TEST(PhaseA, index_range_check) {
-	Vector<int> x(10);
+	vector<int> x(10);
 	EXPECT_NO_THROW(
 	for (int k = 0; k < 10; k += 1) {
 		x[k] = k;
@@ -108,7 +108,7 @@ TEST(PhaseA, PushBackAmort) {
     std::launch::async,
     [&smallPush_cnt, &bigPush_cnt, &die] (void) {
       Foo obj;
-      Vector<Foo> x;
+      vector<Foo> x;
       int size = 1000;
       
       for(int i=0; i<size; ++i){
@@ -154,7 +154,7 @@ TEST(PhaseA, PushBackAmort) {
 #define ARRAY_SIZE(X) (sizeof(X)/sizeof(*X))
 #if defined(PHASE_A4) | defined(PHASE_A)
 TEST(PhaseA, PushBackFront){
-  Vector<int> x; // creates an empty Vector
+  vector<int> x; // creates an empty vector
   EXPECT_EQ(0, x.size());
   x.push_back(42); 
   EXPECT_EQ(1, x.size());
@@ -171,9 +171,9 @@ TEST(PhaseA, PushBackFront){
 
 #if defined(PHASE_A5) | defined(PHASE_A)
 TEST(PhaseA, CopyCtor){
-  Vector<int> x;
+  vector<int> x;
   x.push_back(42);
-  Vector<int> y(x); // copy constructed
+  vector<int> y(x); // copy constructed
   x.push_back(0);
   
   EXPECT_EQ(1, y.size());
@@ -191,7 +191,7 @@ TEST(PhaseA, CopyCtor){
 TEST(PhaseA, PushBackCopy){
   Foo::reset();
   {
-    Vector<Foo> x(10); // 10 default-constructed Foo objects
+    vector<Foo> x(10); // 10 default-constructed Foo objects
     for (int k = 0; k < 11; ++k) { 
       Foo lval;
       x.push_back(lval);

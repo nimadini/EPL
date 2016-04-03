@@ -11,7 +11,7 @@
 #define noexcept
 #endif
 
-using epl::Vector;
+using epl::vector;
 
 /*****************************************************************************************/
 // Class Instrumentation
@@ -45,13 +45,13 @@ namespace{
 /*****************************************************************************************/
 #if defined(PHASE_B0) | defined(PHASE_B)
 TEST(PhaseB, MoveCtor){
-  Vector<Foo> x;
+  vector<Foo> x;
   for(unsigned int i=0; i<10; ++i)
     x.push_back(Foo());
 
-  Vector<Foo> y(x);
+  vector<Foo> y(x);
   Foo::reset();
-  Vector<Foo> z(std::move(x));
+  vector<Foo> z(std::move(x));
 
   EXPECT_EQ(Foo::moves, 0);
   EXPECT_EQ(Foo::copies, 0);
@@ -64,7 +64,7 @@ TEST(PhaseB, MoveCtor){
 TEST(PhaseB, PushBackMove){
   Foo::reset();
   {
-    Vector<Foo> x(10); // 10 default-constructed Foo objects
+    vector<Foo> x(10); // 10 default-constructed Foo objects
     for (int k = 0; k < 11; ++k) { 
       x.push_back(Foo());
     }
@@ -80,7 +80,7 @@ TEST(PhaseB, PushBackMove){
 TEST(PhaseB, ReallocCopy){
   Foo::reset();
   {
-    Vector<Vector<Foo>> x(3);
+    vector<vector<Foo>> x(3);
     x[0].push_back(Foo()); //1 alive Foo
     x.push_back(x[0]); //1 copy, 2 alive Foo
   } //ensures x is destroyed

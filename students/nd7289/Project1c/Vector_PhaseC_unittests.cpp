@@ -5,19 +5,19 @@
 
 //define PHASE_C
 
-using epl::Vector;
+using epl::vector;
 using namespace std;
 
 #ifdef PHASE_C
 
 TEST(PhaseC, direct_init_list){
-	Vector<int> w{ 1, 2, 3 };
+	vector<int> w{ 1, 2, 3 };
 	EXPECT_EQ(3, w.size());
 }
 
 #define ARRAY_SIZE(X) (sizeof(X)/sizeof(*X))
 TEST(PhaseC, copy_init_list){
-  Vector<int> x = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 42, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  vector<int> x = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 42, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   int ans[] = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 42, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   EXPECT_EQ(ARRAY_SIZE(ans), x.size());
   for(unsigned int i=0; i<ARRAY_SIZE(ans); ++i)
@@ -25,14 +25,14 @@ TEST(PhaseC, copy_init_list){
 }
 
 TEST(PhaseC, range_for_loop){
-	Vector<int32_t> x(10);
+	vector<int32_t> x(10);
 
 	int32_t k = 0;
 	for (auto& v : x) {
 		v = k++;
 	}
 
-	const Vector<int32_t>& y = x;
+	const vector<int32_t>& y = x;
 	int32_t s = 0;
 	for (const auto& v : y) {
 		s += v;
@@ -42,7 +42,7 @@ TEST(PhaseC, range_for_loop){
 }
 
 TEST(PhaseC, ItrExceptSevere){
-  Vector<int> x(1);
+  vector<int> x(1);
   auto itr = begin(x);
   x.pop_back();
   try{
@@ -56,7 +56,7 @@ TEST(PhaseC, ItrExceptSevere){
 }
 
 TEST(PhaseC, ItrExceptModerate){
-	Vector<int>  x(3), y{1,2,3};
+	vector<int>  x(3), y{1,2,3};
 	auto xi = begin(x);
 	
 	x = y;
@@ -70,7 +70,7 @@ TEST(PhaseC, ItrExceptModerate){
 }
 
 TEST(PhaseC, ItrExceptMild){
-  Vector<int> x(3);
+  vector<int> x(3);
   auto itr = begin(x);
   x.pop_back();
   try{
