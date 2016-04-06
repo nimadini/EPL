@@ -50,6 +50,10 @@ class vector {
 	uint64_t fidx; 		// front index
 	uint64_t eidx; 		// end index
 	uint64_t unit;		// unit for dynamic doubling
+
+	// Note: vnumber and anumber should not be copied/moved in copy and move logics
+	// basically they are created once during the lifetime of an object and will
+	// only be incremented at certain places
 	uint64_t vnumber;	// version number (used in iterator)
 	uint64_t anumber;	// allocation number (used in iterator), 
 					 	// re-assignment to vector is also considered an allocation
@@ -411,7 +415,7 @@ public:
 		uint64_t anumber;
 		vector<T> const& v;
 
-		void check_iterator_validity(void) {
+		void check_iterator_validity(void) const {
 			// iterator references a position that does 
 			// not exist, i.e., the position is out-of-bounds
 			if (!v.is_idx_in_range(itr_idx)) {
@@ -428,7 +432,7 @@ public:
 			}
 		}
 
-		void cmp_opt_iterators_validity(iterator const& rhs) {
+		void cmp_opt_iterators_validity(iterator const& rhs) const {
 			this->check_iterator_validity();
 			rhs.check_iterator_validity();
 		}
