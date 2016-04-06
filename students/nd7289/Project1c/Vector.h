@@ -353,6 +353,76 @@ public:
 
 		cout << "\n";
 	}
+
+	class iterator;
+    friend class iterator;
+
+	class iterator {
+	private:
+		uint64_t itr_idx;
+		vector<T>& v;
+	
+	public:
+		using iterator_category = std::random_access_iterator_tag;
+		using value_type = T;
+		using reference = T&;
+		using pointer = T*;
+		using difference_type = uint64_t;
+
+		iterator(vector& vec) : v(vec), itr_idx(vec.fidx) {}
+
+		iterator(iterator const& rhs) {
+			itr_idx = rhs.itr_idx;
+			v = rhs.v;
+		}
+
+		~iterator() = default;
+
+		reference operator*(void) const {
+			return v[itr_idx];
+		}
+
+		pointer operator->(void) { 
+			return &v[itr_idx]; 
+		}
+
+		// prefix ++
+		iterator operator++(void) {
+			itr_idx = v.inc_mod(itr_idx);
+			return *this;
+		}
+
+		// postfix ++
+		iterator operator++(int junk) {
+			iterator itr { *this };
+			itr_idx = v.inc_mod(itr_idx);
+			return itr;
+		}
+
+		// prefix --
+		iterator operator--(void) {
+			itr_idx = v.dec_mod(itr_idx);
+			return *this;
+		}
+
+		// postfix --
+		iterator operator--(int junk) {
+			iterator itr { *this };
+			itr_idx = v.dec_mod(itr_idx);
+			return itr;
+		}
+
+		bool operator!=(const iterator &rhs) const {
+			return itr_idx != rhs.itr_idx ||
+						 v != rhs.v;
+		}
+
+		bool operator==(const iterator& rhs) const { 
+			return itr_idx == rhs.itr_idx && 
+						 v == rhs.v;
+		}
+	};
+    
 };
 
 } //namespace epl
