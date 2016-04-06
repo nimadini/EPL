@@ -50,6 +50,7 @@ class vector {
 	uint64_t fidx; 		// front index
 	uint64_t eidx; 		// end index
 	uint64_t unit;		// unit for dynamic doubling
+	uint64_t vnumber;	// version number (used in iterator)
 
 	// init a vector: data would be null, fidx
 	// and eidx both point to the 1st elem
@@ -58,6 +59,11 @@ class vector {
 		capacity = INITIAL_UNIT;
 		fidx = eidx = 0;
 		unit = INITIAL_UNIT;
+		vnumber = 0;
+	}
+
+	bool same_version(vector const& v) {
+		return vnumber == v.vnumber;
 	}
 
 	// copy constructor logic
@@ -355,21 +361,24 @@ public:
 	}
 
 	class iterator;
+
     friend class iterator;
 
 	class iterator {
 	private:
 		uint64_t itr_idx;
-		vector<T>& v;
+		vector<T> const& v;
 	
 	public:
-		using iterator_category = std::random_access_iterator_tag;
 		using value_type = T;
 		using reference = T&;
 		using pointer = T*;
 		using difference_type = uint64_t;
+		using iterator_category = std::random_access_iterator_tag;
 
-		iterator(vector& vec) : v(vec), itr_idx(vec.fidx) {}
+		iterator(vector const& vec) : v(vec), itr_idx(vec.fidx) {}
+
+		iterator(vector const& vec, bool dummy) : v(vec), itr_idx(vec.inc_mod(vec.eidx)) {}
 
 		iterator(iterator const& rhs) {
 			itr_idx = rhs.itr_idx;
@@ -393,7 +402,7 @@ public:
 		}
 
 		// postfix ++
-		iterator operator++(int junk) {
+		iterator operator++(int dummy) {
 			iterator itr { *this };
 			itr_idx = v.inc_mod(itr_idx);
 			return itr;
@@ -406,23 +415,29 @@ public:
 		}
 
 		// postfix --
-		iterator operator--(int junk) {
+		iterator operator--(int dummy) {
 			iterator itr { *this };
 			itr_idx = v.dec_mod(itr_idx);
 			return itr;
 		}
 
-		bool operator!=(const iterator &rhs) const {
-			return itr_idx != rhs.itr_idx ||
-						 v != rhs.v;
-		}
-
 		bool operator==(const iterator& rhs) const { 
 			return itr_idx == rhs.itr_idx && 
-						 v == rhs.v;
+						   v.same_version(rhs.v);
+		}
+
+		bool operator!=(const iterator &rhs) const {
+			return !(*this == rhs);
 		}
 	};
-    
+
+	iterator begin(void) {
+		return iterator(*this);
+	}
+
+	iterator end(void) {
+		return iterator(*this, true);
+	}
 };
 
 } //namespace epl
