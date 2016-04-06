@@ -201,6 +201,14 @@ class vector {
 		return (i - 1) % capacity;
 	}
 
+	// returns the absolute index
+	uint64_t abs_idx(uint64_t idx) const {
+		if (idx >= fidx) {
+			return idx - fidx;
+		}
+		return idx + capacity - fidx;
+	}
+
 public:
 	// Default constructor.
 	vector(void) {
@@ -425,13 +433,29 @@ public:
 			return itr;
 		}
 
-		bool operator==(const iterator& rhs) const { 
+		bool operator==(iterator const& rhs) const { 
 			return itr_idx == rhs.itr_idx && 
 						   v.same_version(rhs.v); // TODO: needed?
 		}
 
-		bool operator!=(const iterator &rhs) const {
+		bool operator!=(iterator const& rhs) const {
 			return !(*this == rhs);
+		}
+
+		bool operator<(iterator const& rhs) const {
+			return v.abs_idx(itr_idx) < rhs.v.abs_idx(rhs.itr_idx);
+		}
+
+		bool operator<=(iterator const& rhs) const {
+			return !(*this > rhs);
+		}
+
+		bool operator>=(iterator const& rhs) const {
+			return !(*this < rhs);
+		}
+
+		bool operator>(iterator const& rhs) const {
+			return (rhs < *this) && (rhs != *this);
 		}
 	};
 
