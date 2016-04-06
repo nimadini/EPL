@@ -408,6 +408,16 @@ public:
 		vnumber++;
 	}
 
+	// emplace back is a variadic member template function,
+	// which takes a variable number of arguments and using
+	// std::forward it decides which version of the push_back
+	// should be invoked per each passed argument
+	template<typename... Args>
+	void emplace_back(Args&&... args) {
+		// TODO: check if number of args is ZERO
+		push_back(std::forward<Args>(args)...);
+	}
+
 	void pop_back(void) {
 		// if array is empty
 		if (!size()) {
