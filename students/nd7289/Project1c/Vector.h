@@ -311,7 +311,8 @@ public:
 		init(begin, end, tag_var);
 	}
 
-	vector(std::initializer_list<int> list) : vector(list.begin(), list.end()) {}
+	// constructor which builds vector from a std::initializer_list<T>
+	vector(std::initializer_list<T> list) : vector(list.begin(), list.end()) {}
 
 	// copy constructor
 	vector(vector const& that) {
@@ -396,7 +397,7 @@ public:
 	void push_back(T&& elem) {
 		allocIfNull();
 
-		// If there is no empty spot.
+		// if there is no empty spot
 		if (!empty_spots()) {
 			resize();
 		}
@@ -408,7 +409,7 @@ public:
 	}
 
 	void pop_back(void) {
-		// If array is empty.
+		// if array is empty
 		if (!size()) {
 			throw std::out_of_range("subscript out of range");
 		}
@@ -447,7 +448,7 @@ public:
 	}
 
 	void pop_front(void) {
-		// If array is empty.
+		// if array is empty
 		if (!size()) {
 			throw std::out_of_range("subscript out of range");
 		}
