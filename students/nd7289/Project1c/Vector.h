@@ -70,8 +70,46 @@ class vector {
 		vnumber = anumber = 0;
 	}
 
-	bool same_version(vector const& v) {
-		return vnumber == v.vnumber;
+	void init(uint64_t size) {
+		if (!size) {
+			init();
+		} else {
+			data = (T*) ::operator new((size+1) * sizeof(T));
+			
+			for (uint64_t i=1; i < size+1; i++) {
+				new (&data[i]) T{};
+			}
+
+			fidx = 0;
+			eidx = size;
+			capacity = size+1;
+			unit = INITIAL_UNIT;
+			vnumber = anumber = 0;
+		}
+	}
+
+	// constructor logic for input iterators
+	template <typename It>
+	void init(It begin, It end, std::input_iterator_tag dummy) {
+		init();
+		
+		while (begin != end) {
+			this->push_back(*begin);
+			++begin;
+		}
+	}
+
+	// constructor logic for random access iterators (one mem-allocation)
+	template <typename It>
+	void init(It begin, It end, std::random_access_iterator_tag dummy) {
+		uint64_t size = end - begin; // total number of elems
+
+		init(size);
+
+		while (begin != end) {
+			this->push_back(*begin);
+			++begin;
+		}	
 	}
 
 	// copy constructor logic
@@ -245,48 +283,37 @@ class vector {
 	}
 
 public:
-	// Default constructor.
+	// default constructor
 	vector(void) {
 		init();
 	}
 
-	// Destructor.
+	// destructor
 	~vector(void) {
 		destroy();
 	}
 
-	// Constructor.
+	// constructor
 	vector(uint64_t size) {
-		if (!size) {
-			init();
-		} else {
-			data = (T*) ::operator new((size+1) * sizeof(T));
-			
-			for (uint64_t i=1; i < size+1; i++) {
-				new (&data[i]) T{};
-			}
-
-			fidx = 0;
-			eidx = size;
-			capacity = size+1;
-			unit = INITIAL_UNIT;
-		}
+		init(size);
 	}
 
-/*	template <typename It>
-	vector(It begin, It end) : vector() {
-		while (begin != end) {
-			this->push_back(*begin);
-			++begin;
-		}
-
+	// constructor for (Itr b, Itr e)
+	template <typename It>
+	vector(It begin, It end) {
+		// type of the iterator, like: input, or random access are currently targeted.
 		typename std::iterator_traits<It>::iterator_category tag_var{};
+
+		// tag_var is just a dummy arg to let compiler decides which init to invoke
+		// we did not want to use if/else and cause dynamic overhead for figuring out
+		// the type of the iterator. compile time decision is desired (remember that
+		// one of the STL goals is competitive performance with hand-written code.)
+		init(begin, end, tag_var);
 	}
 
 	vector(std::initializer_list<int> list) : vector(list.begin(), list.end()) {}
-	*/
 
-	// Copy constructor.
+	// copy constructor
 	vector(vector const& that) {
 		copy(that);
 	}
