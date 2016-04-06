@@ -51,6 +51,8 @@ class vector {
 	uint64_t eidx; 		// end index
 	uint64_t unit;		// unit for dynamic doubling
 	uint64_t vnumber;	// version number (used in iterator)
+	uint64_t anumber;	// allocation number (used in iterator), 
+					 	// re-assignment to vector is also considered an allocation
 
 	// init a vector: data would be null, fidx
 	// and eidx both point to the 1st elem
@@ -60,6 +62,7 @@ class vector {
 		fidx = eidx = 0;
 		unit = INITIAL_UNIT;
 		vnumber = 0;
+		anumber = 0;
 	}
 
 	bool same_version(vector const& v) {
@@ -140,6 +143,8 @@ class vector {
 		capacity += unit;
 		unit *= 2;
 		data = new_data;
+
+		anumber++;
 	}
 
 	void add_front_resize(const T& elem) {
@@ -159,6 +164,8 @@ class vector {
 		capacity += unit;
 		unit *= 2;
 		data = new_data;
+
+		anumber++;
 	}
 
 	// resizing logc
@@ -177,6 +184,8 @@ class vector {
 		unit *= 2;
 
 		this->data=new_data;
+
+		anumber++;
 	}
 
 	void allocIfNull(void) {
@@ -184,6 +193,8 @@ class vector {
 		if (!data) {
 			data = (T*) ::operator new(capacity * sizeof(T));
 		}
+
+		anumber++;
 	}
 
 	uint64_t empty_spots(void) const {
@@ -261,6 +272,7 @@ public:
 		if (this != &rhs) {
 			destroy();
 			copy(rhs);
+			anumber++;
 		}
 
 		return *this;
@@ -396,6 +408,7 @@ public:
 	private:
 		uint64_t itr_idx;
 		uint64_t vnumber;
+		uint64_t anumber;
 		vector<T> const& v;
 
 		void check_iterator_validity(void) {
@@ -403,6 +416,10 @@ public:
 			// not exist, i.e., the position is out-of-bounds
 			if (!v.is_idx_in_range(itr_idx)) {
 				throw invalid_iterator(invalid_iterator::SeverityLevel::SEVERE);
+			}
+
+			if (anumber != v.anumber) {
+				throw invalid_iterator(invalid_iterator::SeverityLevel::MODERATE);
 			}
 
 			// invalidated for other reasons
@@ -424,17 +441,13 @@ public:
 		using iterator_category = std::random_access_iterator_tag;
 
 		// construct an iterator, with itr_idx equal to vec.fidx
-		iterator(vector const& vec) : v(vec), itr_idx(vec.fidx), vnumber(vec.vnumber) {}
+		iterator(vector const& vec) : v(vec), itr_idx(vec.fidx), vnumber(vec.vnumber), anumber(vec.anumber)  {}
 
 		// construct an iterator, with itr_idx equal to vec.eidx + 1 (STL convention [a, b))
-		iterator(vector const& vec, bool dummy) : v(vec), itr_idx(vec.eidx), vnumber(vec.vnumber) {}
+		iterator(vector const& vec, bool dummy) : v(vec), itr_idx(vec.eidx), vnumber(vec.vnumber), anumber(vec.anumber) {}
 
 		// copy constructor
-		iterator(iterator const& rhs) {
-			itr_idx = rhs.itr_idx;
-			v = rhs.v;
-			vnumber = rhs.vnumber;
-		}
+		iterator(iterator const& rhs) = default;
 
 		// default destructor
 		~iterator(void) = default;
