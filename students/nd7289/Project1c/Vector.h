@@ -201,6 +201,14 @@ class vector {
 		return (i - 1) % capacity;
 	}
 
+	bool is_idx_in_range(uint64_t idx) const {
+		if (eidx >= fidx) {
+			return idx >= fidx && idx <= eidx;
+		}
+
+		return idx >= fidx || idx <= eidx;
+	}
+
 	// returns the absolute index
 	uint64_t abs_idx(uint64_t idx) const {
 		if (idx >= fidx) {
@@ -303,6 +311,8 @@ public:
 			eidx = inc_mod(eidx);
 			new (&this->data[eidx]) T{elem};
 		}
+
+		vnumber++;
 	}
 
 	void push_back(T&& elem) {
@@ -315,6 +325,8 @@ public:
 
 		eidx = inc_mod(eidx);
 		new (&this->data[eidx]) T{std::move(elem)};
+
+		vnumber++;
 	}
 
 	void pop_back(void) {
@@ -325,6 +337,8 @@ public:
 
 		this->data[eidx].~T();
 		eidx = dec_mod(eidx);
+
+		vnumber++;
 	}
 
 	void push_front(const T& elem) {
@@ -336,6 +350,8 @@ public:
 			new (&this->data[fidx]) T{elem};
 			fidx = dec_mod(fidx);
 		}
+
+		vnumber++;
 	}
 
 	void push_front(T&& elem) {
@@ -348,6 +364,8 @@ public:
 		new (&this->data[fidx]) T{std::move(elem)};
 
 		fidx = dec_mod(fidx);
+
+		vnumber++;
 	}
 
 	void pop_front(void) {
@@ -358,6 +376,8 @@ public:
 
 		fidx = inc_mod(fidx);
 		this->data[fidx].~T();
+
+		vnumber++;
 	}
 
 	void print(void) {
@@ -375,7 +395,26 @@ public:
 	class iterator {
 	private:
 		uint64_t itr_idx;
+		uint64_t vnumber;
 		vector<T> const& v;
+
+		void check_iterator_validity(void) {
+			// iterator references a position that does 
+			// not exist, i.e., the position is out-of-bounds
+			if (!v.is_idx_in_range(itr_idx)) {
+				throw invalid_iterator(invalid_iterator::SeverityLevel::SEVERE);
+			}
+
+			// invalidated for other reasons
+			if (vnumber != v.vnumber) {
+				throw invalid_iterator(invalid_iterator::SeverityLevel::MILD);
+			}
+		}
+
+		void cmp_opt_iterators_validity(iterator const& rhs) {
+			this->check_iterator_validity();
+			rhs.check_iterator_validity();
+		}
 	
 	public:
 		using value_type = T;
@@ -385,36 +424,45 @@ public:
 		using iterator_category = std::random_access_iterator_tag;
 
 		// construct an iterator, with itr_idx equal to vec.fidx
-		iterator(vector const& vec) : v(vec), itr_idx(vec.fidx) {}
+		iterator(vector const& vec) : v(vec), itr_idx(vec.fidx), vnumber(vec.vnumber) {}
 
 		// construct an iterator, with itr_idx equal to vec.eidx + 1 (STL convention [a, b))
-		iterator(vector const& vec, bool dummy) : v(vec), itr_idx(vec.inc_mod(vec.eidx)) {}
+		iterator(vector const& vec, bool dummy) : v(vec), itr_idx(vec.eidx), vnumber(vec.vnumber) {}
 
 		// copy constructor
 		iterator(iterator const& rhs) {
 			itr_idx = rhs.itr_idx;
 			v = rhs.v;
+			vnumber = rhs.vnumber;
 		}
 
 		// default destructor
 		~iterator(void) = default;
 
 		reference operator*(void) const {
+			check_iterator_validity();
+
 			return v[itr_idx];
 		}
 
 		pointer operator->(void) const { 
+			check_iterator_validity();
+
 			return &v[itr_idx]; 
 		}
 
 		// prefix ++
 		iterator operator++(void) {
+			check_iterator_validity();
+
 			itr_idx = v.inc_mod(itr_idx);
 			return *this;
 		}
 
 		// postfix ++
 		iterator operator++(int dummy) {
+			check_iterator_validity();
+
 			iterator itr { *this };
 			itr_idx = v.inc_mod(itr_idx);
 			return itr;
@@ -422,12 +470,16 @@ public:
 
 		// prefix --
 		iterator operator--(void) {
+			check_iterator_validity();
+
 			itr_idx = v.dec_mod(itr_idx);
 			return *this;
 		}
 
 		// postfix --
 		iterator operator--(int dummy) {
+			check_iterator_validity();
+
 			iterator itr { *this };
 			itr_idx = v.dec_mod(itr_idx);
 			return itr;
@@ -435,32 +487,43 @@ public:
 
 		// a == b
 		bool operator==(iterator const& rhs) const { 
-			return itr_idx == rhs.itr_idx && 
-						   v.same_version(rhs.v); // TODO: needed?
+			cmp_opt_iterators_validity(rhs);
+
+			return itr_idx == rhs.itr_idx;
 		}
 
 		// a != b -> !(a == b)
 		bool operator!=(iterator const& rhs) const {
+			cmp_opt_iterators_validity(rhs);
+
 			return !(*this == rhs);
 		}
 
 		// a < b
 		bool operator<(iterator const& rhs) const {
+			cmp_opt_iterators_validity(rhs);
+
 			return v.abs_idx(itr_idx) < rhs.v.abs_idx(rhs.itr_idx);
 		}
 
 		// a > b -> !(a < b) && a != b
 		bool operator>(iterator const& rhs) const {
+			cmp_opt_iterators_validity(rhs);
+
 			return (rhs < *this) && (rhs != *this);
 		}
 
 		// a <= b -> !(a > b)
 		bool operator<=(iterator const& rhs) const {
+			cmp_opt_iterators_validity(rhs);
+
 			return !(*this > rhs);
 		}
 
 		// a >= b -> !(a < b)
 		bool operator>=(iterator const& rhs) const {
+			cmp_opt_iterators_validity(rhs);
+
 			return !(*this < rhs);
 		}
 	};
