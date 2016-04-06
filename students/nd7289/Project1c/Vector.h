@@ -206,6 +206,17 @@ class vector {
 		return capacity - size() - 1; 
 	}
 
+	uint64_t add_mod(uint64_t i, uint64_t j) const {
+		return (i + j) % capacity;
+	}
+
+	uint64_t sub_mod(uint64_t i, uint64_t j) const {
+		i += capacity;
+		j %= capacity;
+
+		return (i - j) % capacity;
+	}
+
 	uint64_t inc_mod(uint64_t i) const {
 		return (i + 1) % capacity;
 	}
@@ -493,7 +504,7 @@ public:
 		iterator& operator+=(uint64_t num) {
 			check_iterator_validity();
 
-			itr_idx = (itr_idx + num) % v.capacity;
+			itr_idx = v.add_mod(itr_idx, num);
 
 			return *this;
 		}
@@ -501,9 +512,28 @@ public:
 		// a + b
 		iterator operator+(uint64_t num) const {
 			check_iterator_validity();
-			
+
 			iterator itr { *this };
 			itr += num;
+
+			return itr;
+		}
+
+		// a -= b
+		iterator& operator-=(uint64_t num) {
+			check_iterator_validity();
+
+			itr_idx = v.sub_mod(itr_idx, num);
+
+			return *this;
+		}
+
+		// a - b
+		iterator operator-(uint64_t num) const {
+			check_iterator_validity();
+
+			iterator itr { *this };
+			itr -= num;
 
 			return itr;
 		}
