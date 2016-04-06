@@ -474,7 +474,7 @@ public:
 		}
 
 		// prefix ++
-		iterator operator++(void) {
+		iterator& operator++(void) {
 			check_iterator_validity();
 
 			itr_idx = v.inc_mod(itr_idx);
@@ -486,12 +486,14 @@ public:
 			check_iterator_validity();
 
 			iterator itr { *this };
-			itr_idx = v.inc_mod(itr_idx);
+			
+			operator++();
+
 			return itr;
 		}
 
 		// prefix --
-		iterator operator--(void) {
+		iterator& operator--(void) {
 			check_iterator_validity();
 
 			itr_idx = v.dec_mod(itr_idx);
@@ -503,7 +505,9 @@ public:
 			check_iterator_validity();
 
 			iterator itr { *this };
-			itr_idx = v.dec_mod(itr_idx);
+
+			operator--();
+			
 			return itr;
 		}
 
