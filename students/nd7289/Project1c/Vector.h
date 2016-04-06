@@ -422,6 +422,11 @@ public:
 				throw invalid_iterator(invalid_iterator::SeverityLevel::SEVERE);
 			}
 
+			// if the iterator reference a position that is in-bounds, but 
+			// the memory location for that position may have been changed 
+			// (e.g., a reallocation has been performed because of a push_back, 
+			// or a new assignment has been performed to the vector), then the 
+			// exception you throw must have the level MODERATE.
 			if (anumber != v.anumber) {
 				throw invalid_iterator(invalid_iterator::SeverityLevel::MODERATE);
 			}
