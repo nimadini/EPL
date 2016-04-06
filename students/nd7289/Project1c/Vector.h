@@ -273,6 +273,19 @@ public:
 		}
 	}
 
+/*	template <typename It>
+	vector(It begin, It end) : vector() {
+		while (begin != end) {
+			this->push_back(*begin);
+			++begin;
+		}
+
+		typename std::iterator_traits<It>::iterator_category tag_var{};
+	}
+
+	vector(std::initializer_list<int> list) : vector(list.begin(), list.end()) {}
+	*/
+
 	// Copy constructor.
 	vector(vector const& that) {
 		copy(that);
@@ -506,7 +519,7 @@ public:
 			return &v[itr_idx]; 
 		}
 
-		// a += b
+		// itr += a
 		iterator& operator+=(uint64_t num) {
 			check_iterator_validity();
 
@@ -515,7 +528,7 @@ public:
 			return *this;
 		}
 
-		// a + b
+		// itr + a
 		iterator operator+(uint64_t num) const {
 			check_iterator_validity();
 
@@ -525,7 +538,7 @@ public:
 			return itr;
 		}
 
-		// a -= b
+		// itr -= a
 		iterator& operator-=(uint64_t num) {
 			check_iterator_validity();
 
@@ -534,7 +547,7 @@ public:
 			return *this;
 		}
 
-		// a - b
+		// itr - a
 		iterator operator-(uint64_t num) const {
 			check_iterator_validity();
 
@@ -542,6 +555,13 @@ public:
 			itr -= num;
 
 			return itr;
+		}
+
+		// itr1 - itr2
+		iterator operator-(iterator const& rhs) const {
+			cmp_opt_iterators_validity(rhs);
+
+			return *this - rhs.itr_idx;
 		}
 
 		// itr[]
