@@ -558,19 +558,19 @@ public:
 		}
 
 		// itr1 - itr2
-		iterator operator-(iterator const& rhs) const {
+		// TODO: what if rhs is bigger than "this"?
+		// TODO: what if the vectors in "this" and rhs are different?
+		uint64_t operator-(iterator const& rhs) const {
 			cmp_opt_iterators_validity(rhs);
 
-			return *this - rhs.itr_idx;
+			return v.abs_idx(itr_idx) - v.abs_idx(rhs.itr_idx);
 		}
 
-		// itr[]
-		iterator operator[](uint64_t num) const {
+		// itr[] -> *(itr + num)
+		reference operator[](uint64_t num) const {
 			check_iterator_validity();
 
-			iterator itr { *this };
-
-			return itr + num;
+			return *(*this + num);
 		}
 
 		// prefix ++
