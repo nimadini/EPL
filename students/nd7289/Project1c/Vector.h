@@ -53,7 +53,9 @@ class vector {
 
 	// Note: vnumber and anumber should not be copied/moved in copy and move logics
 	// basically they are created once during the lifetime of an object and will
-	// only be incremented at certain places
+	// only be incremented at certain places. Also note that vnumber is a more
+	// general version number than anumber. (at any place if anumber is incremented,
+	// vnumber will also be incremented, but the other way around does not hold)
 	uint64_t vnumber;	// version number (used in iterator)
 	uint64_t anumber;	// allocation number (used in iterator), 
 					 	// re-assignment to vector is also considered an allocation
@@ -65,8 +67,7 @@ class vector {
 		capacity = INITIAL_UNIT;
 		fidx = eidx = 0;
 		unit = INITIAL_UNIT;
-		vnumber = 0;
-		anumber = 0;
+		vnumber = anumber = 0;
 	}
 
 	bool same_version(vector const& v) {
@@ -276,6 +277,8 @@ public:
 		if (this != &rhs) {
 			destroy();
 			copy(rhs);
+
+			vnumber++;
 			anumber++;
 		}
 
@@ -289,6 +292,14 @@ public:
 		std::swap(this->fidx, rhs.fidx);
 		std::swap(this->eidx, rhs.eidx);
 		std::swap(this->unit, rhs.unit);
+
+		vnumber++;
+		anumber++;
+
+		// TODO: needed? 
+		// based on: https://piazza.com/class/ik5telvhcgio3?cid=105
+		rhs.vnumber++;
+		rhs.anumber++;
 
 		return *this;
 	}
@@ -416,8 +427,15 @@ public:
 		vector<T> const& v;
 
 		void check_iterator_validity(void) const {
+			// if the version number has not changed,
+			// iterator is valid (even if it is out of range!)
+			if (vnumber == v.vnumber) {
+				return;
+			}
+
 			// iterator references a position that does 
-			// not exist, i.e., the position is out-of-bounds
+			// not exist due to modifications in vector
+			// (e.g. out-of-bounds position, because of a pop_back)
 			if (!v.is_idx_in_range(itr_idx)) {
 				throw invalid_iterator(invalid_iterator::SeverityLevel::SEVERE);
 			}
@@ -432,9 +450,7 @@ public:
 			}
 
 			// invalidated for other reasons
-			if (vnumber != v.vnumber) {
-				throw invalid_iterator(invalid_iterator::SeverityLevel::MILD);
-			}
+			throw invalid_iterator(invalid_iterator::SeverityLevel::MILD);
 		}
 
 		void cmp_opt_iterators_validity(iterator const& rhs) const {
@@ -475,6 +491,8 @@ public:
 
 		// a += b
 		iterator& operator+=(uint64_t num) {
+			check_iterator_validity();
+
 			itr_idx = (itr_idx + num) % v.capacity;
 
 			return *this;
@@ -482,6 +500,8 @@ public:
 
 		// a + b
 		iterator operator+(uint64_t num) const {
+			check_iterator_validity();
+			
 			iterator itr { *this };
 			itr += num;
 
