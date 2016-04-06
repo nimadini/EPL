@@ -476,6 +476,9 @@ public:
 		using difference_type = uint64_t;
 		using iterator_category = std::random_access_iterator_tag;
 
+		// TODO:: how to write the default constructor?
+		// http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
+
 		// construct an iterator, with itr_idx equal to vec.fidx
 		iterator(vector const& vec) : v(vec), itr_idx(vec.fidx), vnumber(vec.vnumber), anumber(vec.anumber)  {}
 
@@ -484,6 +487,9 @@ public:
 
 		// copy constructor
 		iterator(iterator const& rhs) = default;
+
+		// copy assignment operator
+		iterator& operator=(iterator const& rhs) = default;
 
 		// default destructor
 		~iterator(void) = default;
@@ -536,6 +542,15 @@ public:
 			itr -= num;
 
 			return itr;
+		}
+
+		// itr[]
+		iterator operator[](uint64_t num) const {
+			check_iterator_validity();
+
+			iterator itr { *this };
+
+			return itr + num;
 		}
 
 		// prefix ++
