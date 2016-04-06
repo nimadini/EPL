@@ -433,36 +433,44 @@ public:
 			return itr;
 		}
 
+		// a == b
 		bool operator==(iterator const& rhs) const { 
 			return itr_idx == rhs.itr_idx && 
 						   v.same_version(rhs.v); // TODO: needed?
 		}
 
+		// a != b -> !(a == b)
 		bool operator!=(iterator const& rhs) const {
 			return !(*this == rhs);
 		}
 
+		// a < b
 		bool operator<(iterator const& rhs) const {
 			return v.abs_idx(itr_idx) < rhs.v.abs_idx(rhs.itr_idx);
 		}
 
+		// a > b -> !(a < b) && a != b
+		bool operator>(iterator const& rhs) const {
+			return (rhs < *this) && (rhs != *this);
+		}
+
+		// a <= b -> !(a > b)
 		bool operator<=(iterator const& rhs) const {
 			return !(*this > rhs);
 		}
 
+		// a >= b -> !(a < b)
 		bool operator>=(iterator const& rhs) const {
 			return !(*this < rhs);
 		}
-
-		bool operator>(iterator const& rhs) const {
-			return (rhs < *this) && (rhs != *this);
-		}
 	};
 
+	// iterator pointing to beginning of the vector
 	iterator begin(void) {
 		return iterator(*this);
 	}
 
+	// iterator pointing to end of the vector
 	iterator end(void) {
 		return iterator(*this, true);
 	}
