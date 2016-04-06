@@ -376,22 +376,26 @@ public:
 		using difference_type = uint64_t;
 		using iterator_category = std::random_access_iterator_tag;
 
+		// construct an iterator, with itr_idx equal to vec.fidx
 		iterator(vector const& vec) : v(vec), itr_idx(vec.fidx) {}
 
+		// construct an iterator, with itr_idx equal to vec.eidx + 1 (STL convention [a, b))
 		iterator(vector const& vec, bool dummy) : v(vec), itr_idx(vec.inc_mod(vec.eidx)) {}
 
+		// copy constructor
 		iterator(iterator const& rhs) {
 			itr_idx = rhs.itr_idx;
 			v = rhs.v;
 		}
 
-		~iterator() = default;
+		// default destructor
+		~iterator(void) = default;
 
 		reference operator*(void) const {
 			return v[itr_idx];
 		}
 
-		pointer operator->(void) { 
+		pointer operator->(void) const { 
 			return &v[itr_idx]; 
 		}
 
@@ -423,7 +427,7 @@ public:
 
 		bool operator==(const iterator& rhs) const { 
 			return itr_idx == rhs.itr_idx && 
-						   v.same_version(rhs.v);
+						   v.same_version(rhs.v); // TODO: needed?
 		}
 
 		bool operator!=(const iterator &rhs) const {
