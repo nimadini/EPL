@@ -473,6 +473,21 @@ public:
 			return &v[itr_idx]; 
 		}
 
+		// a += b
+		iterator& operator+=(uint64_t num) {
+			itr_idx = (itr_idx + num) % v.capacity;
+
+			return *this;
+		}
+
+		// a + b
+		iterator operator+(uint64_t num) const {
+			iterator itr { *this };
+			itr += num;
+
+			return itr;
+		}
+
 		// prefix ++
 		iterator& operator++(void) {
 			check_iterator_validity();
@@ -507,7 +522,7 @@ public:
 			iterator itr { *this };
 
 			operator--();
-			
+
 			return itr;
 		}
 
