@@ -477,16 +477,14 @@ public:
 		cout << "\n";
 	}
 
-	class iterator;
-
-    friend class iterator;
-
+	template <bool NonConst>
 	class iterator {
 	private:
+		using vtype = typename std::conditional<NonConst, vector<T>&, const vector<T>&>::type;
 		uint64_t itr_idx;
 		uint64_t vnumber;
 		uint64_t anumber;
-		vector<T> const& v;
+		vtype v;
 
 		void check_iterator_validity(void) const {
 			// if the version number has not changed,
@@ -522,8 +520,8 @@ public:
 	
 	public:
 		using value_type = T;
-		using reference = T&;
-		using pointer = T*;
+		using reference = typename std::conditional<NonConst, T&, const T&>::type;
+		using pointer = typename std::conditional<NonConst, T*, const T*>::type;;
 		using difference_type = uint64_t;
 		using iterator_category = std::random_access_iterator_tag;
 
@@ -531,10 +529,10 @@ public:
 		// http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
 
 		// construct an iterator, with itr_idx equal to vec.fidx
-		iterator(vector const& vec) : v(vec), itr_idx(vec.fidx), vnumber(vec.vnumber), anumber(vec.anumber)  {}
+		iterator(vtype vec) : itr_idx(vec.fidx), vnumber(vec.vnumber), anumber(vec.anumber), v(vec)  {}
 
 		// construct an iterator, with itr_idx equal to vec.eidx + 1 (STL convention [a, b))
-		iterator(vector const& vec, bool dummy) : v(vec), itr_idx(vec.eidx), vnumber(vec.vnumber), anumber(vec.anumber) {}
+		iterator(vtype vec, bool dummy) : itr_idx(vec.eidx), vnumber(vec.vnumber), anumber(vec.anumber), v(vec) {}
 
 		// copy constructor
 		iterator(iterator const& rhs) = default;
@@ -692,21 +690,20 @@ public:
 		}
 	};
 
-	/*
-	template <typename It>
-	auto begin(It x) -> decltype(x.begin()) {
-		return x.begin();
-	}
-	*/
-	
-	// iterator pointing to beginning of the vector
-	iterator begin(void) {
-		return iterator(*this);
+	iterator<true> begin(void) {
+		return iterator<true>(*this);
 	}
 
-	// iterator pointing to end of the vector
-	iterator end(void) {
-		return iterator(*this, true);
+	iterator<false> begin(void) const {
+		return iterator<false>(*this);
+	}
+
+	iterator<true> end(void) {
+		return iterator<true>(*this, true);
+	}
+
+	iterator<false> end(void) const {
+		return iterator<false>(*this, true);
 	}
 };
 
