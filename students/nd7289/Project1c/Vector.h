@@ -104,7 +104,11 @@ class vector {
 	void init(It begin, It end, std::random_access_iterator_tag dummy) {
 		uint64_t size = end - begin; // total number of elems
 
-		init(size);
+		data = nullptr;
+		capacity = size+1;
+		fidx = eidx = 0;
+		unit = INITIAL_UNIT;
+		vnumber = anumber = 0;
 
 		while (begin != end) {
 			this->push_back(*begin);
