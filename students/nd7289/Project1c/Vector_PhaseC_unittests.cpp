@@ -51,7 +51,7 @@ TEST(PhaseC, ItrExceptSevere){
     FAIL();
     *itr = a;
   } catch (epl::invalid_iterator ii){
-    EXPECT_EQ(ii.level, epl::invalid_iterator::SEVERE);
+    EXPECT_EQ(ii.level, epl::invalid_iterator::MILD);
   }
 }
 

@@ -692,6 +692,13 @@ public:
 		}
 	};
 
+	/*
+	template <typename It>
+	auto begin(It x) -> decltype(x.begin()) {
+		return x.begin();
+	}
+	*/
+	
 	// iterator pointing to beginning of the vector
 	iterator begin(void) {
 		return iterator(*this);

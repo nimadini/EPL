@@ -7,7 +7,7 @@ GTEST_LIB = $(GTEST_DIR)/lib/gtest64.a
 
 CXX = g++
 CXXFLAGS = -g -I $(GTEST_INC) -std=c++11 -Wall -Wno-sign-compare
-DEFS?= -DPHASE_A
+DEFS?= -DPHASE_C
 
 SRCS = $(shell ls *.cpp)
 OBJS = $(patsubst %.cpp, %.o, $(SRCS))
