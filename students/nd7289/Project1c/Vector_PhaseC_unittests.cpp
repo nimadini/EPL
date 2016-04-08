@@ -10,13 +10,68 @@ using namespace std;
 
 #ifdef PHASE_C
 
-TEST(PhaseC, direct_init_list){
+namespace{
+  //Class Instrumentation
+  class Zoe {
+  public:
+    int id = 0;
+
+    Zoe(void) = default;
+
+    Zoe(int id) {
+      this->id = id;
+    }
+  };
+
+  class Foo {
+  public:
+    int key;
+    Zoe barnes;
+
+    bool alive;
+    
+    static uint64_t constructions;
+    static uint64_t destructions;
+    static uint64_t copies;
+    static uint64_t moves;
+    static void reset(){ moves=copies=destructions=constructions=0; }
+
+
+    Foo(int key, Zoe barnes) {
+      this->key = key;
+      this->barnes = barnes;
+      alive = true;
+      ++constructions;
+    }
+
+    Foo(void) { alive = true; ++constructions; }
+    ~Foo(void) { destructions += alive;}
+    Foo(const Foo&) noexcept { alive = true; ++copies; }
+    Foo(Foo&& that) noexcept { that.alive = false; this->alive = true; ++moves;}
+  };
+
+  uint64_t Foo::constructions = 0;
+  uint64_t Foo::destructions = 0;
+  uint64_t Foo::copies = 0;
+  uint64_t Foo::moves = 0;
+
+  class Bar {
+    public:
+     uint64_t num1;
+     uint64_t num2;
+     Bar(void) { this->num1 = 0; this->num2 = 0; }
+     Bar(uint64_t arg1, uint64_t arg2) { this->num1 = arg1; this->num2 = arg2; }
+     bool operator==(Bar const & rhs) { return this->num1 == rhs.num1 && this->num2 == rhs.num2; }
+  };
+} //namespace
+
+TEST(PhaseC, direct_init_list) {
 	epl::vector<int> w{ 1, 2, 3 };
 	EXPECT_EQ(3, w.size());
 }
 
 #define ARRAY_SIZE(X) (sizeof(X)/sizeof(*X))
-TEST(PhaseC, copy_init_list){
+TEST(PhaseC, copy_init_list) {
   epl::vector<int> x = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 42, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   int ans[] = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 42, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   EXPECT_EQ(ARRAY_SIZE(ans), x.size());
@@ -26,7 +81,7 @@ TEST(PhaseC, copy_init_list){
   EXPECT_EQ(x.size(), 21);
 }
 
-TEST(PhaseC, range_for_loop){
+TEST(PhaseC, range_for_loop) {
 	epl::vector<int32_t> x(10);
 
 	int32_t k = 0;
@@ -43,7 +98,7 @@ TEST(PhaseC, range_for_loop){
 	EXPECT_EQ(45, s);
 }
 
-TEST(PhaseC, ItrExceptSevere){
+TEST(PhaseC, ItrExceptSevere) {
   epl::vector<int> x(1);
   auto itr = begin(x);
   x.pop_back();
@@ -52,7 +107,7 @@ TEST(PhaseC, ItrExceptSevere){
     a = *itr;
     FAIL();
     *itr = a;
-  } catch (epl::invalid_iterator ii){
+  } catch (epl::invalid_iterator ii) {
     EXPECT_EQ(ii.level, epl::invalid_iterator::MILD);
   }
 }
@@ -85,24 +140,215 @@ TEST(PhaseC, ItrExceptMild){
   }
 }
 
-TEST(PhaseC, EmplaceBack){
-  epl::vector<int> x{};
-
-  x.emplace_back(0);
-
-  /*auto itr = begin(x);
-
-  int i = 0;
-  while (itr != end(x)) {
-    EXPECT_EQ(*itr, i++);
-  }*/
-}
-
 TEST(PhaseC2, ItrToConstItr) {
     epl::vector<int> x = { 1, 2, 3, 4, 5 };
     auto it = x.begin();
     epl::vector<int>::const_iterator cit = it;
     cit++;
 }
+
+TEST(PhaseC, EmplaceBack){
+  epl::vector<int> x{};
+
+  x.emplace_back(0);
+  x.emplace_back(1);
+  x.emplace_back(2);
+
+  auto itr = begin(x);
+
+  int i = 0;
+  while (itr != end(x)) {
+    EXPECT_EQ(*itr, i++);
+    itr++;
+  }
+}
+
+TEST(PhaseC, EmplaceBack_Foo){
+  epl::vector<Foo> x{};
+
+  Foo foo{};
+  Foo bar{};
+
+  x.emplace_back(); // T{}
+  x.emplace_back(foo); // T{ copy }
+  x.emplace_back(bar); // T{ copy }
+  x.emplace_back(Foo{}); // T { move }
+
+  x.pop_back(); // destroy
+
+  EXPECT_EQ(4, Foo::constructions);
+  EXPECT_EQ(2, Foo::copies);
+  EXPECT_EQ(1, Foo::moves);
+  EXPECT_EQ(1, Foo::destructions);
+}
+
+TEST(PhaseC, EmplaceBack_Foo_Zoe){
+  epl::vector<Foo> x{};
+
+  Zoe barnes{21}; 
+
+  x.emplace_back(5, barnes);
+
+  epl::vector<Foo>::iterator itr = begin(x);
+
+  EXPECT_EQ(21, (*itr).barnes.id);
+}
+
+
+TEST(PhaseC, CopyToDifferent){
+  epl::vector<Foo> x{};
+
+  epl::vector<Foo> y{};
+
+  x.push_back(Foo{});
+  x.push_back(Foo{});
+  x.push_back(Foo{});
+
+  epl::vector<Foo>::const_iterator itr = begin(x);
+
+  *itr;
+
+  x = y;
+
+  try{
+    *itr;
+    FAIL();
+  } catch (epl::invalid_iterator ii) {
+    EXPECT_EQ(ii.level, epl::invalid_iterator::MODERATE);
+  }
+}
+
+TEST(PhaseC, CopyToSame){
+  epl::vector<Foo> x{};
+
+  x.push_back(Foo{});
+  x.push_back(Foo{});
+  x.push_back(Foo{});
+
+  epl::vector<Foo>::const_iterator itr = begin(x);
+
+  *itr;
+
+  x = x;
+
+  *itr;
+}
+
+//Jo
+TEST(PhaseC, ItrEquivalence)
+{
+    epl::vector<int> x = { 1, 2, 3, 4, 5 };
+    auto it = x.begin();
+    auto it2 = x.begin();
+
+    EXPECT_TRUE(it == it2);
+
+}
+//Jo
+TEST(PhaseC, ItrCopyAssn)
+{
+    epl::vector<int> x = { 1, 2, 3, 4, 5 };
+    auto it = x.begin();
+    auto it2 = it;
+
+    EXPECT_TRUE(it == it2);
+}
+
+//Jo
+TEST(PhaseC, ItrCopyConstruct)
+{
+    epl::vector<int> x = { 1, 2, 3, 4, 5 };
+    auto it = x.begin();
+    auto it2 (it);
+
+    EXPECT_TRUE(it == it2);
+}
+//Jo
+TEST(PhaseC1, emplacebackPOD)
+{
+    epl::vector<int> x = { 9, 8, 7, 6, 5, 4, 3 };
+    int ans[] = { 9, 8, 7, 6, 5, 4, 3, 2};
+    x.emplace_back(2);
+    EXPECT_EQ(ARRAY_SIZE(ans), x.size());
+    for (unsigned int i = 0; i<ARRAY_SIZE(ans); ++i)
+     EXPECT_EQ(x[i], ans[i]);
+}
+//Jo
+TEST(PhaseC1, emplacebackNotPOD)
+{
+    uint64_t arg1 = 7;
+    uint64_t arg2 = 14;
+    epl::vector<Bar> x(2);
+    Bar ans[] = { Bar{}, Bar{}, Bar{ arg1 , arg2} };
+    x.emplace_back(arg1, arg2);
+    EXPECT_EQ(ARRAY_SIZE(ans), x.size());
+    for (unsigned int i = 0; i<ARRAY_SIZE(ans); ++i)
+     EXPECT_TRUE(x[i] == ans[i]);
+}
+
+//Jo
+TEST(PhaseC2, ItrExceptSevere1)
+{
+    epl::vector<int> x(5);
+    auto itr = end(x);
+    x.pop_back();
+    try {
+     int a;
+     a = *itr;
+     FAIL();
+     *itr = a;
+    }
+    catch (epl::invalid_iterator ii) {
+     EXPECT_EQ(epl::invalid_iterator::SEVERE, ii.level);
+    }
+}
+//Jo
+TEST(PhaseC2, ItrExceptOutOfRange)
+{
+    epl::vector<int> x(5);
+    auto itr = end(x);
+    try {
+     int a;
+     a = *itr;
+     FAIL();
+     *itr = a;
+    }
+    catch (std::out_of_range ex) {
+     //EXPECT_EQ(epl::invalid_iterator::SEVERE, ii.level);
+    }
+}
+
+//Jo
+TEST(PhaseC2, ItrExceptModerate2) {
+    epl::vector<int>  x(1);
+    auto xi = begin(x);
+
+    //Should cause a resize
+    x.push_back(5);
+
+    try {
+     *xi = 5;
+     FAIL();
+    }
+    catch (epl::invalid_iterator ex) {
+     EXPECT_EQ(ex.level, epl::invalid_iterator::MODERATE);
+    }
+}
+
+//Jo
+TEST(PhaseC2, ItrExceptMild3) {
+    epl::vector<int> x(10);
+    epl::vector<int>::iterator p = x.begin();
+    x.pop_front();
+    try {
+     if (p == x.begin()) { // p is invalid and MILD
+       FAIL();
+     }
+    }
+    catch (epl::invalid_iterator ii) {
+     EXPECT_EQ(epl::invalid_iterator::MILD, ii.level);
+    }
+}
+
 
 #endif
