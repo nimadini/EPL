@@ -98,4 +98,11 @@ TEST(PhaseC, EmplaceBack){
   }*/
 }
 
+TEST(PhaseC2, ItrToConstItr) {
+    epl::vector<int> x = { 1, 2, 3, 4, 5 };
+    auto it = x.begin();
+    epl::vector<int>::const_iterator cit = it;
+    cit++;
+}
+
 #endif

@@ -494,6 +494,12 @@ public:
 		cout << "\n";
 	}
 
+	template <bool NonConst>
+	class Iterator;
+
+	using iterator = Iterator<true>;
+	using const_iterator = Iterator<false>;
+
 	// non-const to const is valid
 	template <bool NonConst>
 	class Iterator {
@@ -551,6 +557,9 @@ public:
 		// construct an Iterator, with itr_idx equal to vec.fidx
 		Iterator(vtype vec) : itr_idx(vec.fidx), vnumber(vec.vnumber), anumber(vec.anumber), v(vec)  {}
 
+		// construct an Iterator, with itr_idx equal to idx
+		Iterator(vtype vec, uint64_t idx) : itr_idx(idx), vnumber(vec.vnumber), anumber(vec.anumber), v(vec)  {}
+
 		// construct an Iterator, with itr_idx equal to vec.eidx + 1 (STL convention [a, b))
 		Iterator(vtype vec, bool dummy) : itr_idx(vec.eidx), vnumber(vec.vnumber), anumber(vec.anumber), v(vec) {}
 
@@ -559,6 +568,10 @@ public:
 
 		// copy assignment operator
 		Iterator& operator=(Iterator const& rhs) = default;
+
+		operator const_iterator() const {
+			return const_iterator{this->v, this->itr_idx};
+		}
 
 		// default destructor
 		~Iterator(void) = default;
@@ -710,9 +723,6 @@ public:
 			return !(*this < rhs);
 		}
 	};
-
-	using iterator = Iterator<true>;
-	using const_iterator = Iterator<false>;
 
 	iterator begin(void) {
 		return Iterator<true>(*this);
