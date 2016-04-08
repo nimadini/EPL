@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <stdexcept>
+#include <list>
 #include "gtest/gtest.h"
 #include "Vector.h"
 
@@ -148,8 +149,10 @@ TEST(PhaseC2, ItrToConstItr) {
 }
 
 TEST(PhaseC, EmplaceBack){
-  epl::vector<int> x{};
+  Foo::reset();
 
+  epl::vector<int> x{};
+  
   x.emplace_back(0);
   x.emplace_back(1);
   x.emplace_back(2);
@@ -163,7 +166,9 @@ TEST(PhaseC, EmplaceBack){
   }
 }
 
-TEST(PhaseC, EmplaceBack_Foo){
+TEST(PhaseC, EmplaceBack_Foo) {
+  Foo::reset();
+
   epl::vector<Foo> x{};
 
   Foo foo{};
@@ -183,6 +188,8 @@ TEST(PhaseC, EmplaceBack_Foo){
 }
 
 TEST(PhaseC, EmplaceBack_Foo_Zoe){
+  Foo::reset();
+
   epl::vector<Foo> x{};
 
   Zoe barnes{21}; 
@@ -196,6 +203,8 @@ TEST(PhaseC, EmplaceBack_Foo_Zoe){
 
 
 TEST(PhaseC, CopyToDifferent){
+  Foo::reset();
+
   epl::vector<Foo> x{};
 
   epl::vector<Foo> y{};
@@ -219,6 +228,8 @@ TEST(PhaseC, CopyToDifferent){
 }
 
 TEST(PhaseC, CopyToSame){
+  Foo::reset();
+  
   epl::vector<Foo> x{};
 
   x.push_back(Foo{});
@@ -350,5 +361,131 @@ TEST(PhaseC2, ItrExceptMild3) {
     }
 }
 
+
+TEST(PhaseC2, ConstructFromRandIterators) {
+    Foo::reset();
+    {
+     epl::vector<Foo> x(20);
+     auto it_begin = x.begin();
+     auto it_end = x.end();
+     epl::vector<Foo> y(it_begin, it_end);
+
+    }
+
+    EXPECT_EQ(20, Foo::constructions);
+    EXPECT_EQ(40, Foo::destructions);
+    EXPECT_EQ(20, Foo::copies);
+    EXPECT_LE(0, Foo::moves);
+
+}
+
+TEST(PhaseC1, ConstructFromListItr) {
+    std::list<int> x = { 1, 2, 3, 4, 5 };
+    epl::vector<int> y(x.begin(),x.end());
+    EXPECT_EQ(y.size(), x.size());
+    uint64_t i = 0;
+    for (std::list<int>::iterator it = x.begin(); it != x.end(); it++)
+    {
+     EXPECT_TRUE(*it == y[i]);
+     ++i;
+    }
+}
+
+TEST(PhaseC, ItrSubtraction)
+{
+    epl::vector<int> x = { 1, 2, 3, 4, 5 };
+    auto it_begin = x.begin();
+    auto it_end = end(x);
+
+    EXPECT_EQ(x.size(), it_end - it_begin);
+}
+
+TEST(PhaseC2, ItrModerateCopy) {
+    epl::vector<int> x(1);
+    auto x_itr = begin(x); // default
+
+    epl::vector<int> y(1);
+    auto y_itr = begin(y); // default
+    
+    y = x; // 
+
+    *x_itr;
+
+    // x_itr should be valid
+    // y_itr should not be valid
+
+    try {
+     *y_itr;
+     FAIL();
+    }
+    catch (epl::invalid_iterator ii) {
+     EXPECT_EQ(epl::invalid_iterator::MODERATE, ii.level);
+    }
+}
+
+TEST(PhaseC2, ItrExceptModerateMove1)
+{
+    epl::vector<int> x(5);
+    epl::vector<int> y(5);
+    auto x_it = begin(x);
+
+    y = std::move(x);
+
+    try {
+     x_it += 4;
+     FAIL();
+    }
+    catch (epl::invalid_iterator ex) {
+     EXPECT_EQ(ex.level, epl::invalid_iterator::MODERATE);
+    }
+
+}
+
+TEST(PhaseC2, ItrExceptModerateMove2)
+{
+    epl::vector<int> x(5);
+    epl::vector<int> y(5);
+    auto y_it = begin(y);
+
+    y = std::move(x);
+
+    try {
+     y_it -= 4;
+     FAIL();
+    }
+    catch (epl::invalid_iterator ex) {
+     EXPECT_EQ(ex.level, epl::invalid_iterator::MODERATE);
+    }
+
+}
+
+
+TEST(PhaseC, OperatorOverloading) {
+    epl::vector<int> x{1, 2, 3, 4, 5};
+
+    auto bIt = begin(x);
+    auto eIt = end(x);
+
+    EXPECT_TRUE(bIt < eIt);
+
+    bIt++;
+    eIt-=2;
+
+    EXPECT_TRUE(bIt < eIt);
+    EXPECT_TRUE(bIt <= eIt);
+    EXPECT_TRUE(eIt > bIt);
+    EXPECT_TRUE(eIt >= bIt);
+    
+    EXPECT_EQ(*bIt, 2);
+    EXPECT_EQ(bIt[1], 3);
+    EXPECT_EQ(*eIt, 4);
+
+    bIt+=1;
+
+    EXPECT_EQ(bIt + 1, eIt);
+
+    EXPECT_TRUE(bIt != eIt);
+    EXPECT_TRUE(bIt + 1 == eIt);
+}
 
 #endif

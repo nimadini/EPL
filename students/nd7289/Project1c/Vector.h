@@ -254,17 +254,6 @@ class vector {
 		return capacity - size() - 1; 
 	}
 
-	uint64_t add_mod(uint64_t i, uint64_t j) const {
-		return (i + j) % capacity;
-	}
-
-	uint64_t sub_mod(uint64_t i, uint64_t j) const {
-		i += capacity;
-		j %= capacity;
-
-		return (i - j) % capacity;
-	}
-
 	uint64_t inc_mod(uint64_t i) const {
 		return (i + 1) % capacity;
 	}
@@ -276,20 +265,12 @@ class vector {
 		return (i - 1) % capacity;
 	}
 
-	bool is_idx_in_range(uint64_t idx) const {
-		if (eidx >= fidx) {
-			return idx >= fidx && idx <= eidx;
+	bool is_idx_in_range(uint64_t idx) const {		
+		if (idx < 0 || idx > size()) {
+			return false;
 		}
 
-		return idx >= fidx || idx <= eidx;
-	}
-
-	// returns the absolute index
-	uint64_t abs_idx(uint64_t idx) const {
-		if (idx >= fidx) {
-			return idx - fidx;
-		}
-		return idx + capacity - fidx;
+		return true;
 	}
 
 public:
@@ -555,13 +536,13 @@ public:
 		Iterator(void) = default;
 
 		// construct an Iterator, with itr_idx equal to vec.fidx
-		Iterator(vtype vec) : itr_idx(vec.fidx), vnumber(vec.vnumber), anumber(vec.anumber), v(vec)  {}
+		Iterator(vtype vec) : itr_idx(0), vnumber(vec.vnumber), anumber(vec.anumber), v(vec)  {}
 
 		// construct an Iterator, with itr_idx equal to idx
 		Iterator(vtype vec, uint64_t idx) : itr_idx(idx), vnumber(vec.vnumber), anumber(vec.anumber), v(vec)  {}
 
 		// construct an Iterator, with itr_idx equal to vec.eidx + 1 (STL convention [a, b))
-		Iterator(vtype vec, bool dummy) : itr_idx(vec.eidx), vnumber(vec.vnumber), anumber(vec.anumber), v(vec) {}
+		Iterator(vtype vec, bool dummy) : itr_idx(vec.size()), vnumber(vec.vnumber), anumber(vec.anumber), v(vec) {}
 
 		// copy constuctor
 		Iterator(Iterator const& rhs) = default;
@@ -592,7 +573,7 @@ public:
 		Iterator& operator+=(uint64_t num) {
 			check_iterator_validity();
 
-			itr_idx = v.add_mod(itr_idx, num);
+			itr_idx += num;
 
 			return *this;
 		}
@@ -611,7 +592,7 @@ public:
 		Iterator& operator-=(uint64_t num) {
 			check_iterator_validity();
 
-			itr_idx = v.sub_mod(itr_idx, num);
+			itr_idx -= num;
 
 			return *this;
 		}
@@ -627,13 +608,12 @@ public:
 		}
 
 		// itr1 - itr2
-		// TODO: what if rhs is bigger than "this"?
 		// if the vectors in "this" and rhs are different, 
 		// it's undefined behavior
 		uint64_t operator-(Iterator const& rhs) const {
 			cmp_opt_iterators_validity(rhs);
 
-			return v.abs_idx(itr_idx) - v.abs_idx(rhs.itr_idx);
+			return itr_idx - rhs.itr_idx;
 		}
 
 		// itr[] -> *(itr + num)
@@ -647,7 +627,7 @@ public:
 		Iterator& operator++(void) {
 			check_iterator_validity();
 
-			itr_idx = v.inc_mod(itr_idx);
+			itr_idx++;
 			return *this;
 		}
 
@@ -666,7 +646,7 @@ public:
 		Iterator& operator--(void) {
 			check_iterator_validity();
 
-			itr_idx = v.dec_mod(itr_idx);
+			itr_idx--;
 			return *this;
 		}
 
@@ -699,7 +679,7 @@ public:
 		bool operator<(Iterator const& rhs) const {
 			cmp_opt_iterators_validity(rhs);
 
-			return v.abs_idx(itr_idx) < rhs.v.abs_idx(rhs.itr_idx);
+			return itr_idx < rhs.itr_idx;
 		}
 
 		// a > b -> !(a < b) && a != b
