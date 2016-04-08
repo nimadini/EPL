@@ -22,6 +22,8 @@ TEST(PhaseC, copy_init_list){
   EXPECT_EQ(ARRAY_SIZE(ans), x.size());
   for(unsigned int i=0; i<ARRAY_SIZE(ans); ++i)
     EXPECT_EQ(x[i], ans[i]);
+
+  EXPECT_EQ(x.size(), 21);
 }
 
 TEST(PhaseC, range_for_loop){
@@ -81,6 +83,19 @@ TEST(PhaseC, ItrExceptMild){
   } catch (epl::invalid_iterator ii){
     EXPECT_EQ(ii.level, epl::invalid_iterator::MILD);
   }
+}
+
+TEST(PhaseC, EmplaceBack){
+  epl::vector<int> x{};
+
+  x.emplace_back(0);
+
+  /*auto itr = begin(x);
+
+  int i = 0;
+  while (itr != end(x)) {
+    EXPECT_EQ(*itr, i++);
+  }*/
 }
 
 #endif

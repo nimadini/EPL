@@ -11,7 +11,7 @@
 using std::cout;
 
 //Utility gives std::rel_ops which will fill in relational
-//iterator operations so long as you provide the
+//Iterator operations so long as you provide the
 //operators discussed in class.  In any case, ensure that
 //all operations listed in this website are legal for your
 //iterators:
@@ -56,8 +56,8 @@ class vector {
 	// only be incremented at certain places. Also note that vnumber is a more
 	// general version number than anumber. (at any place if anumber is incremented,
 	// vnumber will also be incremented, but the other way around does not hold)
-	uint64_t vnumber;	// version number (used in iterator)
-	uint64_t anumber;	// allocation number (used in iterator), 
+	uint64_t vnumber;	// version number (used in Iterator)
+	uint64_t anumber;	// allocation number (used in Iterator), 
 					 	// re-assignment to vector is also considered an allocation
 
 	// init a vector: data would be null, fidx
@@ -145,6 +145,12 @@ class vector {
 		this->fidx = tmp.fidx;
 		this->eidx = tmp.eidx;
 		this->unit = tmp.unit;
+
+		this->vnumber = 0;
+		this->anumber = 0;
+
+		tmp.vnumber++;
+		tmp.anumber++;
 
 		// make the destruction of tmp harmless
 		// since now both this->data and tmp.data
@@ -305,12 +311,12 @@ public:
 	// constructor for (Itr b, Itr e)
 	template <typename It>
 	vector(It begin, It end) {
-		// type of the iterator, like: input, or random access are currently targeted.
+		// type of the Iterator, like: input, or random access are currently targeted.
 		typename std::iterator_traits<It>::iterator_category tag_var{};
 
 		// tag_var is just a dummy arg to let compiler decides which init to invoke
 		// we did not want to use if/else and cause dynamic overhead for figuring out
-		// the type of the iterator. compile time decision is desired (remember that
+		// the type of the Iterator. compile time decision is desired (remember that
 		// one of the STL goals is competitive performance with hand-written code.)
 		init(begin, end, tag_var);
 	}
@@ -352,8 +358,6 @@ public:
 		vnumber++;
 		anumber++;
 
-		// TODO: needed? 
-		// based on: https://piazza.com/class/ik5telvhcgio3?cid=105
 		rhs.vnumber++;
 		rhs.anumber++;
 
@@ -418,8 +422,17 @@ public:
 	// should be invoked per each passed argument
 	template<typename... Args>
 	void emplace_back(Args&&... args) {
-		// TODO: check if number of args is ZERO
-		push_back(std::forward<Args>(args)...);
+		allocIfNull();
+
+		// if there is no empty spot
+		if (!empty_spots()) {
+			resize();
+		}
+
+		eidx = inc_mod(eidx);
+		new (&this->data[eidx]) T{ std::forward<Args>(args)... };
+
+		vnumber++;
 	}
 
 	void pop_back(void) {
@@ -481,8 +494,9 @@ public:
 		cout << "\n";
 	}
 
+	// non-const to const is valid
 	template <bool NonConst>
-	class iterator {
+	class Iterator {
 	private:
 		using vtype = typename std::conditional<NonConst, vector<T>&, const vector<T>&>::type;
 		uint64_t itr_idx;
@@ -492,19 +506,19 @@ public:
 
 		void check_iterator_validity(void) const {
 			// if the version number has not changed,
-			// iterator is valid (even if it is out of range!)
+			// Iterator is valid (even if it is out of range!)
 			if (vnumber == v.vnumber) {
 				return;
 			}
 
-			// iterator references a position that does 
+			// Iterator references a position that does 
 			// not exist due to modifications in vector
 			// (e.g. out-of-bounds position, because of a pop_back)
 			if (!v.is_idx_in_range(itr_idx)) {
 				throw invalid_iterator(invalid_iterator::SeverityLevel::SEVERE);
 			}
 
-			// if the iterator reference a position that is in-bounds, but 
+			// if the Iterator reference a position that is in-bounds, but 
 			// the memory location for that position may have been changed 
 			// (e.g., a reallocation has been performed because of a push_back, 
 			// or a new assignment has been performed to the vector), then the 
@@ -517,7 +531,7 @@ public:
 			throw invalid_iterator(invalid_iterator::SeverityLevel::MILD);
 		}
 
-		void cmp_opt_iterators_validity(iterator const& rhs) const {
+		void cmp_opt_iterators_validity(Iterator const& rhs) const {
 			this->check_iterator_validity();
 			rhs.check_iterator_validity();
 		}
@@ -529,23 +543,25 @@ public:
 		using difference_type = uint64_t;
 		using iterator_category = std::random_access_iterator_tag;
 
-		// TODO:: how to write the default constructor?
+		// need a default constructor due to this link:
 		// http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
+		// the behavior should be undefined though
+		Iterator(void) = default;
 
-		// construct an iterator, with itr_idx equal to vec.fidx
-		iterator(vtype vec) : itr_idx(vec.fidx), vnumber(vec.vnumber), anumber(vec.anumber), v(vec)  {}
+		// construct an Iterator, with itr_idx equal to vec.fidx
+		Iterator(vtype vec) : itr_idx(vec.fidx), vnumber(vec.vnumber), anumber(vec.anumber), v(vec)  {}
 
-		// construct an iterator, with itr_idx equal to vec.eidx + 1 (STL convention [a, b))
-		iterator(vtype vec, bool dummy) : itr_idx(vec.eidx), vnumber(vec.vnumber), anumber(vec.anumber), v(vec) {}
+		// construct an Iterator, with itr_idx equal to vec.eidx + 1 (STL convention [a, b))
+		Iterator(vtype vec, bool dummy) : itr_idx(vec.eidx), vnumber(vec.vnumber), anumber(vec.anumber), v(vec) {}
 
-		// copy constructor
-		iterator(iterator const& rhs) = default;
+		// copy constuctor
+		Iterator(Iterator const& rhs) = default;
 
 		// copy assignment operator
-		iterator& operator=(iterator const& rhs) = default;
+		Iterator& operator=(Iterator const& rhs) = default;
 
 		// default destructor
-		~iterator(void) = default;
+		~Iterator(void) = default;
 
 		reference operator*(void) const {
 			check_iterator_validity();
@@ -560,7 +576,7 @@ public:
 		}
 
 		// itr += a
-		iterator& operator+=(uint64_t num) {
+		Iterator& operator+=(uint64_t num) {
 			check_iterator_validity();
 
 			itr_idx = v.add_mod(itr_idx, num);
@@ -569,17 +585,17 @@ public:
 		}
 
 		// itr + a
-		iterator operator+(uint64_t num) const {
+		Iterator operator+(uint64_t num) const {
 			check_iterator_validity();
 
-			iterator itr { *this };
+			Iterator itr { *this };
 			itr += num;
 
 			return itr;
 		}
 
 		// itr -= a
-		iterator& operator-=(uint64_t num) {
+		Iterator& operator-=(uint64_t num) {
 			check_iterator_validity();
 
 			itr_idx = v.sub_mod(itr_idx, num);
@@ -588,10 +604,10 @@ public:
 		}
 
 		// itr - a
-		iterator operator-(uint64_t num) const {
+		Iterator operator-(uint64_t num) const {
 			check_iterator_validity();
 
-			iterator itr { *this };
+			Iterator itr { *this };
 			itr -= num;
 
 			return itr;
@@ -599,8 +615,9 @@ public:
 
 		// itr1 - itr2
 		// TODO: what if rhs is bigger than "this"?
-		// TODO: what if the vectors in "this" and rhs are different?
-		uint64_t operator-(iterator const& rhs) const {
+		// if the vectors in "this" and rhs are different, 
+		// it's undefined behavior
+		uint64_t operator-(Iterator const& rhs) const {
 			cmp_opt_iterators_validity(rhs);
 
 			return v.abs_idx(itr_idx) - v.abs_idx(rhs.itr_idx);
@@ -614,7 +631,7 @@ public:
 		}
 
 		// prefix ++
-		iterator& operator++(void) {
+		Iterator& operator++(void) {
 			check_iterator_validity();
 
 			itr_idx = v.inc_mod(itr_idx);
@@ -622,10 +639,10 @@ public:
 		}
 
 		// postfix ++
-		iterator operator++(int dummy) {
+		Iterator operator++(int dummy) {
 			check_iterator_validity();
 
-			iterator itr { *this };
+			Iterator itr { *this };
 			
 			operator++();
 
@@ -633,7 +650,7 @@ public:
 		}
 
 		// prefix --
-		iterator& operator--(void) {
+		Iterator& operator--(void) {
 			check_iterator_validity();
 
 			itr_idx = v.dec_mod(itr_idx);
@@ -641,10 +658,10 @@ public:
 		}
 
 		// postfix --
-		iterator operator--(int dummy) {
+		Iterator operator--(int dummy) {
 			check_iterator_validity();
 
-			iterator itr { *this };
+			Iterator itr { *this };
 
 			operator--();
 
@@ -652,62 +669,65 @@ public:
 		}
 
 		// a == b
-		bool operator==(iterator const& rhs) const { 
+		bool operator==(Iterator const& rhs) const { 
 			cmp_opt_iterators_validity(rhs);
 
 			return itr_idx == rhs.itr_idx;
 		}
 
 		// a != b -> !(a == b)
-		bool operator!=(iterator const& rhs) const {
+		bool operator!=(Iterator const& rhs) const {
 			cmp_opt_iterators_validity(rhs);
 
 			return !(*this == rhs);
 		}
 
 		// a < b
-		bool operator<(iterator const& rhs) const {
+		bool operator<(Iterator const& rhs) const {
 			cmp_opt_iterators_validity(rhs);
 
 			return v.abs_idx(itr_idx) < rhs.v.abs_idx(rhs.itr_idx);
 		}
 
 		// a > b -> !(a < b) && a != b
-		bool operator>(iterator const& rhs) const {
+		bool operator>(Iterator const& rhs) const {
 			cmp_opt_iterators_validity(rhs);
 
 			return (rhs < *this) && (rhs != *this);
 		}
 
 		// a <= b -> !(a > b)
-		bool operator<=(iterator const& rhs) const {
+		bool operator<=(Iterator const& rhs) const {
 			cmp_opt_iterators_validity(rhs);
 
 			return !(*this > rhs);
 		}
 
 		// a >= b -> !(a < b)
-		bool operator>=(iterator const& rhs) const {
+		bool operator>=(Iterator const& rhs) const {
 			cmp_opt_iterators_validity(rhs);
 
 			return !(*this < rhs);
 		}
 	};
 
-	iterator<true> begin(void) {
-		return iterator<true>(*this);
+	using iterator = Iterator<true>;
+	using const_iterator = Iterator<false>;
+
+	iterator begin(void) {
+		return Iterator<true>(*this);
 	}
 
-	iterator<false> begin(void) const {
-		return iterator<false>(*this);
+	const_iterator begin(void) const {
+		return Iterator<false>(*this);
 	}
 
-	iterator<true> end(void) {
-		return iterator<true>(*this, true);
+	iterator end(void) {
+		return Iterator<true>(*this, true);
 	}
 
-	iterator<false> end(void) const {
-		return iterator<false>(*this, true);
+	const_iterator end(void) const {
+		return Iterator<false>(*this, true);
 	}
 };
 
