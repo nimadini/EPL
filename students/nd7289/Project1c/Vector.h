@@ -246,8 +246,6 @@ class vector {
 		if (!data) {
 			data = (T*) ::operator new(capacity * sizeof(T));
 		}
-
-		anumber++;
 	}
 
 	uint64_t empty_spots(void) const {

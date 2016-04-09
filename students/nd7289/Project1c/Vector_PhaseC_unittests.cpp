@@ -229,7 +229,7 @@ TEST(PhaseC, CopyToDifferent){
 
 TEST(PhaseC, CopyToSame){
   Foo::reset();
-  
+
   epl::vector<Foo> x{};
 
   x.push_back(Foo{});
@@ -486,6 +486,24 @@ TEST(PhaseC, OperatorOverloading) {
 
     EXPECT_TRUE(bIt != eIt);
     EXPECT_TRUE(bIt + 1 == eIt);
+}
+
+TEST(PhaseC2, ItrMildEmplaceBack)
+{
+    uint64_t arg1 = 7;
+    uint64_t arg2 = 14;
+    epl::vector<Bar> x;
+
+    auto itr = x.begin();
+    x.emplace_back(arg1, arg2);
+    try {
+     itr++;
+     FAIL();
+     
+    }
+    catch (epl::invalid_iterator ii) {
+     EXPECT_EQ(epl::invalid_iterator::MILD, ii.level);
+    }
 }
 
 #endif
