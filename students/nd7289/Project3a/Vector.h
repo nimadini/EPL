@@ -1,0 +1,724 @@
+#ifndef _VECTOR_H_
+#define _VECTOR_H_
+
+#include <cstdint>
+#include <stdexcept>
+#include <utility>
+#include <iostream>
+
+#define INITIAL_UNIT 8
+
+using std::cout;
+
+//Utility gives std::rel_ops which will fill in relational
+//Iterator operations so long as you provide the
+//operators discussed in class.  In any case, ensure that
+//all operations listed in this website are legal for your
+//iterators:
+//http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
+using namespace std::rel_ops;
+
+namespace epl {
+
+class invalid_iterator {
+	public:
+	enum SeverityLevel {SEVERE,MODERATE,MILD,WARNING};
+	SeverityLevel level;	
+
+	invalid_iterator(SeverityLevel level = SEVERE){ this->level = level; }
+	virtual const char* what() const {
+	    switch (level) {
+	      case WARNING:   return "Warning"; // not used in Spring 2015
+	      case MILD:      return "Mild";
+	      case MODERATE:  return "Moderate";
+	      case SEVERE:    return "Severe";
+	      default:        return "ERROR"; // should not be used
+	    }
+	}
+};
+
+template <typename T>
+class vector {
+	private:
+	T* data; 			// contains the elements of the vector (it's a circular array)
+						// if fidx == eidx: array is empty
+						// else if (eidx + 1) % capacity == fidx: array is full
+						// so we have one redundant spot in the array to distinguish between
+						// the given 2 scenarios
+
+	uint64_t capacity; 	// the capacity
+	uint64_t fidx; 		// front index
+	uint64_t eidx; 		// end index
+	uint64_t unit;		// unit for dynamic doubling
+
+	// Note: vnumber and anumber should not be copied/moved in copy and move logics
+	// basically they are created once during the lifetime of an object and will
+	// only be incremented at certain places. Also note that vnumber is a more
+	// general version number than anumber. (at any place if anumber is incremented,
+	// vnumber will also be incremented, but the other way around does not hold)
+	uint64_t vnumber;	// version number (used in Iterator)
+	uint64_t anumber;	// allocation number (used in Iterator), 
+					 	// re-assignment to vector is also considered an allocation
+
+	// init a vector: data would be null, fidx
+	// and eidx both point to the 1st elem
+	void init(void) {
+		data = nullptr;
+		capacity = INITIAL_UNIT;
+		fidx = eidx = 0;
+		unit = INITIAL_UNIT;
+		vnumber = anumber = 0;
+	}
+
+	void init(uint64_t size) {
+		if (!size) {
+			init();
+		} else {
+			data = (T*) ::operator new((size+1) * sizeof(T));
+			
+			for (uint64_t i=1; i < size+1; i++) {
+				new (&data[i]) T{};
+			}
+
+			fidx = 0;
+			eidx = size;
+			capacity = size+1;
+			unit = INITIAL_UNIT;
+			vnumber = anumber = 0;
+		}
+	}
+
+	// constructor logic for input iterators
+	template <typename It>
+	void init(It begin, It end, std::input_iterator_tag dummy) {
+		init();
+		
+		while (begin != end) {
+			this->push_back(*begin);
+			++begin;
+		}
+	}
+
+	// constructor logic for random access iterators (one mem-allocation)
+	template <typename It>
+	void init(It begin, It end, std::random_access_iterator_tag dummy) {
+		uint64_t size = end - begin; // total number of elems
+
+		data = nullptr;
+		capacity = size+1;
+		fidx = eidx = 0;
+		unit = INITIAL_UNIT;
+		vnumber = anumber = 0;
+
+		while (begin != end) {
+			this->push_back(*begin);
+			++begin;
+		}	
+	}
+
+	// copy constructor logic
+	void copy(vector const & that) {
+		fidx = that.fidx;
+		eidx = that.eidx;
+		capacity = that.capacity;
+		unit = that.unit;
+
+		// if "that" has no data
+		if (!that.data) {
+			data = nullptr;
+			return;
+		}
+
+		// allocate mem but don't initialize it. 
+		data = (T*) ::operator new(capacity * sizeof(T));
+		
+		// do the copy one-by-one by calling T{elem}, i.e., copy constructor of T
+		for (uint64_t i = 0; i < size(); i++) {
+			new (&data[inc_mod(fidx+i)]) T{that.data[inc_mod(fidx+i)]};
+		}
+	}
+
+	// move constructor logic
+	void my_move(vector&& tmp) {
+		this->data = tmp.data;
+		this->capacity = tmp.capacity;
+		this->fidx = tmp.fidx;
+		this->eidx = tmp.eidx;
+		this->unit = tmp.unit;
+
+		this->vnumber = 0;
+		this->anumber = 0;
+
+		tmp.vnumber++;
+		tmp.anumber++;
+
+		// make the destruction of tmp harmless
+		// since now both this->data and tmp.data
+		// point to the same location
+		tmp.data = nullptr; 
+	}
+
+	// destructor logic
+	void destroy(void) {
+		// if data is not nullptr
+		if (data) {
+			// destroy each elem individually
+			for (uint64_t i = 0; i < size(); i++) {
+				data[inc_mod(fidx+i)].~T();
+			}
+
+			// free the allocated space (no destructors)
+			::operator delete(data); 
+		}
+	}
+
+	void add_back_resize(const T& elem) {
+		T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
+
+		// we should copy the elem 1st before moving the old_data to new_data,
+		// because if elem is part of the given vector, the address may change
+		// and result in wrong array. Another alternative is to taking a tmp
+		// var and copy construct the elem into it and then after resizing (and copying)
+		// is done, move it to the appropriate place. however, the approach implemented
+		// here has one move less overhead.
+
+		// copy construct the elem first, before moving elems to the new array.
+		new (&new_data[capacity]) T{elem}; 
+
+		for (uint64_t i = 0; i < size(); i++) {
+			new (&new_data[i+1]) T{std::move(data[inc_mod(fidx+i)])};
+		}
+
+		destroy();
+
+		fidx = 0;
+		eidx = capacity;
+		capacity += unit;
+		unit *= 2;
+		data = new_data;
+
+		anumber++;
+	}
+
+	void add_front_resize(const T& elem) {
+		T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
+	
+		// copy construct the elem first, before moving elems to the new array.
+		new (&new_data[1]) T{elem};
+
+		for (uint64_t i = 0; i < size(); i++) {
+			new (&new_data[i+2]) T{std::move(data[inc_mod(fidx+i)])};
+		}
+
+		destroy();
+
+		fidx = 0;
+		eidx = capacity;
+		capacity += unit;
+		unit *= 2;
+		data = new_data;
+
+		anumber++;
+	}
+
+	// resizing logc
+	void resize(void) {
+		T* new_data = (T*) ::operator new((capacity+unit) * sizeof(T));
+
+		for (uint64_t i = 0; i < size(); i++) {
+			new (&new_data[i+1]) T{std::move(data[inc_mod(fidx+i)])};
+		}
+
+		destroy();
+
+		fidx=0;
+		eidx=capacity-1;
+		capacity += unit;
+		unit *= 2;
+
+		this->data=new_data;
+
+		anumber++;
+	}
+
+	void allocIfNull(void) {
+		// Check if data has not been allocated (nullptr).
+		if (!data) {
+			data = (T*) ::operator new(capacity * sizeof(T));
+		}
+	}
+
+	uint64_t empty_spots(void) const {
+		return capacity - size() - 1; 
+	}
+
+	uint64_t inc_mod(uint64_t i) const {
+		return (i + 1) % capacity;
+	}
+
+	uint64_t dec_mod(uint64_t i) const {
+		if (!i) {
+			return capacity-1;
+		}
+		return (i - 1) % capacity;
+	}
+
+	bool is_idx_in_range(uint64_t idx) const {		
+		if (idx < 0 || idx > size()) {
+			return false;
+		}
+
+		return true;
+	}
+
+public:
+	// default constructor
+	vector(void) {
+		init();
+	}
+
+	// destructor
+	~vector(void) {
+		destroy();
+	}
+
+	// constructor
+	vector(uint64_t size) {
+		init(size);
+	}
+
+	// constructor for (Itr b, Itr e)
+	template <typename It>
+	vector(It begin, It end) {
+		// type of the Iterator, like: input, or random access are currently targeted.
+		typename std::iterator_traits<It>::iterator_category tag_var{};
+
+		// tag_var is just a dummy arg to let compiler decides which init to invoke
+		// we did not want to use if/else and cause dynamic overhead for figuring out
+		// the type of the Iterator. compile time decision is desired (remember that
+		// one of the STL goals is competitive performance with hand-written code.)
+		init(begin, end, tag_var);
+	}
+
+	// constructor which builds vector from a std::initializer_list<T>
+	vector(std::initializer_list<T> list) : vector(list.begin(), list.end()) {}
+
+	// copy constructor
+	vector(vector const& that) {
+		copy(that);
+	}
+
+	// move constructor
+	vector(vector&& tmp) {
+		my_move(std::move(tmp));
+	}
+
+	// copy assignment operator
+	vector<T>& operator=(vector const& rhs) {
+		if (this != &rhs) {
+			destroy();
+			copy(rhs);
+
+			vnumber++;
+			anumber++;
+		}
+
+		return *this;
+	}
+
+	// move assignment operator
+	vector<T>& operator=(vector&& rhs) {
+		std::swap(this->data, rhs.data);
+		std::swap(this->capacity, rhs.capacity);
+		std::swap(this->fidx, rhs.fidx);
+		std::swap(this->eidx, rhs.eidx);
+		std::swap(this->unit, rhs.unit);
+
+		vnumber++;
+		anumber++;
+
+		rhs.vnumber++;
+		rhs.anumber++;
+
+		return *this;
+	}
+
+	// returns the number of elements in the array
+	uint64_t size(void) const {
+		if (eidx >= fidx) {
+			return eidx - fidx;
+		}
+
+		return capacity - (fidx - eidx);
+	}
+
+	T& operator[](uint64_t k) {
+		if (k < 0 || k >= size()) {
+			throw std::out_of_range("subscript out of range");
+		}
+
+		return data[inc_mod(fidx+k)];
+	}
+
+	const T& operator[](uint64_t k) const {
+		if (k < 0 || k >= size()) {
+			throw std::out_of_range("subscript out of range");
+		}
+
+		return data[inc_mod(fidx+k)];
+	}
+
+	void push_back(const T& elem) {
+		allocIfNull();
+
+		if (!empty_spots()) {
+			add_back_resize(elem);
+		} else {
+			eidx = inc_mod(eidx);
+			new (&this->data[eidx]) T{elem};
+		}
+
+		vnumber++;
+	}
+
+	void push_back(T&& elem) {
+		allocIfNull();
+
+		// if there is no empty spot
+		if (!empty_spots()) {
+			resize();
+		}
+
+		eidx = inc_mod(eidx);
+		new (&this->data[eidx]) T{std::move(elem)};
+
+		vnumber++;
+	}
+
+	// emplace back is a variadic member template function,
+	// which takes a variable number of arguments and using
+	// std::forward it decides which version of the push_back
+	// should be invoked per each passed argument
+	template<typename... Args>
+	void emplace_back(Args&&... args) {
+		allocIfNull();
+
+		// if there is no empty spot
+		if (!empty_spots()) {
+			resize();
+		}
+
+		eidx = inc_mod(eidx);
+		new (&this->data[eidx]) T{ std::forward<Args>(args)... };
+
+		vnumber++;
+	}
+
+	void pop_back(void) {
+		// if array is empty
+		if (!size()) {
+			throw std::out_of_range("subscript out of range");
+		}
+
+		this->data[eidx].~T();
+		eidx = dec_mod(eidx);
+
+		vnumber++;
+	}
+
+	void push_front(const T& elem) {
+		allocIfNull();
+		
+		if (!empty_spots()) {
+			add_front_resize(elem);
+		} else {
+			new (&this->data[fidx]) T{elem};
+			fidx = dec_mod(fidx);
+		}
+
+		vnumber++;
+	}
+
+	void push_front(T&& elem) {
+		allocIfNull();
+		
+		if (!empty_spots()) {
+			resize();
+		}
+
+		new (&this->data[fidx]) T{std::move(elem)};
+
+		fidx = dec_mod(fidx);
+
+		vnumber++;
+	}
+
+	void pop_front(void) {
+		// if array is empty
+		if (!size()) {
+			throw std::out_of_range("subscript out of range");
+		}
+
+		fidx = inc_mod(fidx);
+		this->data[fidx].~T();
+
+		vnumber++;
+	}
+
+	void print(void) {
+		for (uint64_t i = 0; i < size(); i++) {
+			cout << data[(fidx+1+i) % capacity] << " ";
+		}
+
+		cout << "\n";
+	}
+
+	template <bool NonConst>
+	class Iterator;
+
+	using iterator = Iterator<true>;
+	using const_iterator = Iterator<false>;
+
+	// non-const to const is valid
+	template <bool NonConst>
+	class Iterator {
+	private:
+		using vtype = typename std::conditional<NonConst, vector<T>&, const vector<T>&>::type;
+		uint64_t itr_idx;
+		uint64_t vnumber;
+		uint64_t anumber;
+		vtype v;
+
+		void check_iterator_validity(void) const {
+			// if the version number has not changed,
+			// Iterator is valid (even if it is out of range!)
+			if (vnumber == v.vnumber) {
+				return;
+			}
+
+			// Iterator references a position that does 
+			// not exist due to modifications in vector
+			// (e.g. out-of-bounds position, because of a pop_back)
+			if (!v.is_idx_in_range(itr_idx)) {
+				throw invalid_iterator(invalid_iterator::SeverityLevel::SEVERE);
+			}
+
+			// if the Iterator reference a position that is in-bounds, but 
+			// the memory location for that position may have been changed 
+			// (e.g., a reallocation has been performed because of a push_back, 
+			// or a new assignment has been performed to the vector), then the 
+			// exception you throw must have the level MODERATE.
+			if (anumber != v.anumber) {
+				throw invalid_iterator(invalid_iterator::SeverityLevel::MODERATE);
+			}
+
+			// invalidated for other reasons
+			throw invalid_iterator(invalid_iterator::SeverityLevel::MILD);
+		}
+
+		void cmp_opt_iterators_validity(Iterator const& rhs) const {
+			this->check_iterator_validity();
+			rhs.check_iterator_validity();
+		}
+	
+	public:
+		using value_type = T;
+		using reference = typename std::conditional<NonConst, T&, const T&>::type;
+		using pointer = typename std::conditional<NonConst, T*, const T*>::type;;
+		using difference_type = uint64_t;
+		using iterator_category = std::random_access_iterator_tag;
+
+		// need a default constructor due to this link:
+		// http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
+		// the behavior should be undefined though
+		Iterator(void) = default;
+
+		// construct an Iterator, with itr_idx equal to vec.fidx
+		Iterator(vtype vec) : itr_idx(0), vnumber(vec.vnumber), anumber(vec.anumber), v(vec)  {}
+
+		// construct an Iterator, with itr_idx equal to idx
+		Iterator(vtype vec, uint64_t idx) : itr_idx(idx), vnumber(vec.vnumber), anumber(vec.anumber), v(vec)  {}
+
+		// construct an Iterator, with itr_idx equal to vec.eidx + 1 (STL convention [a, b))
+		Iterator(vtype vec, bool dummy) : itr_idx(vec.size()), vnumber(vec.vnumber), anumber(vec.anumber), v(vec) {}
+
+		// copy constuctor
+		Iterator(Iterator const& rhs) = default;
+
+		// copy assignment operator
+		Iterator& operator=(Iterator const& rhs) = default;
+
+		operator const_iterator() const {
+			return const_iterator{this->v, this->itr_idx};
+		}
+
+		// default destructor
+		~Iterator(void) = default;
+
+		reference operator*(void) const {
+			check_iterator_validity();
+
+			return v[itr_idx];
+		}
+
+		pointer operator->(void) const { 
+			check_iterator_validity();
+
+			return &v[itr_idx]; 
+		}
+
+		// itr += a
+		Iterator& operator+=(uint64_t num) {
+			check_iterator_validity();
+
+			itr_idx += num;
+
+			return *this;
+		}
+
+		// itr + a
+		Iterator operator+(uint64_t num) const {
+			check_iterator_validity();
+
+			Iterator itr { *this };
+			itr += num;
+
+			return itr;
+		}
+
+		// itr -= a
+		Iterator& operator-=(uint64_t num) {
+			check_iterator_validity();
+
+			itr_idx -= num;
+
+			return *this;
+		}
+
+		// itr - a
+		Iterator operator-(uint64_t num) const {
+			check_iterator_validity();
+
+			Iterator itr { *this };
+			itr -= num;
+
+			return itr;
+		}
+
+		// itr1 - itr2
+		// if the vectors in "this" and rhs are different, 
+		// it's undefined behavior
+		uint64_t operator-(Iterator const& rhs) const {
+			cmp_opt_iterators_validity(rhs);
+
+			return itr_idx - rhs.itr_idx;
+		}
+
+		// itr[] -> *(itr + num)
+		reference operator[](uint64_t num) const {
+			check_iterator_validity();
+
+			return *(*this + num);
+		}
+
+		// prefix ++
+		Iterator& operator++(void) {
+			check_iterator_validity();
+
+			itr_idx++;
+			return *this;
+		}
+
+		// postfix ++
+		Iterator operator++(int dummy) {
+			check_iterator_validity();
+
+			Iterator itr { *this };
+			
+			operator++();
+
+			return itr;
+		}
+
+		// prefix --
+		Iterator& operator--(void) {
+			check_iterator_validity();
+
+			itr_idx--;
+			return *this;
+		}
+
+		// postfix --
+		Iterator operator--(int dummy) {
+			check_iterator_validity();
+
+			Iterator itr { *this };
+
+			operator--();
+
+			return itr;
+		}
+
+		// a == b
+		bool operator==(Iterator const& rhs) const { 
+			cmp_opt_iterators_validity(rhs);
+
+			return itr_idx == rhs.itr_idx;
+		}
+
+		// a != b -> !(a == b)
+		bool operator!=(Iterator const& rhs) const {
+			cmp_opt_iterators_validity(rhs);
+
+			return !(*this == rhs);
+		}
+
+		// a < b
+		bool operator<(Iterator const& rhs) const {
+			cmp_opt_iterators_validity(rhs);
+
+			return itr_idx < rhs.itr_idx;
+		}
+
+		// a > b -> !(a < b) && a != b
+		bool operator>(Iterator const& rhs) const {
+			cmp_opt_iterators_validity(rhs);
+
+			return (rhs < *this) && (rhs != *this);
+		}
+
+		// a <= b -> !(a > b)
+		bool operator<=(Iterator const& rhs) const {
+			cmp_opt_iterators_validity(rhs);
+
+			return !(*this > rhs);
+		}
+
+		// a >= b -> !(a < b)
+		bool operator>=(Iterator const& rhs) const {
+			cmp_opt_iterators_validity(rhs);
+
+			return !(*this < rhs);
+		}
+	};
+
+	iterator begin(void) {
+		return Iterator<true>(*this);
+	}
+
+	const_iterator begin(void) const {
+		return Iterator<false>(*this);
+	}
+
+	iterator end(void) {
+		return Iterator<true>(*this, true);
+	}
+
+	const_iterator end(void) const {
+		return Iterator<false>(*this, true);
+	}
+};
+
+} //namespace epl
+
+#endif
