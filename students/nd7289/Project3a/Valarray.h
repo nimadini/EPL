@@ -14,9 +14,33 @@
 #ifndef _Valarray_h
 #define _Valarray_h
 
-using std::vector; // during development and testing
-// using epl::vector; // after submission
+#include "Vector.h"
 
+//using std::vector; // during development and testing
+using epl::vector; // after submission
+
+namespace epl {
+
+template <typename T>
+class valarray : public vector<T> {
+	using Same = valarray<T>; // defining Same type
+public:
+	using epl::vector<T>::vector; // to inherit all the constructors
+
+	// changing the semantics of assignment operator
+	Same& operator=(Same const& rhs) {
+		if (this != &rhs) {
+			uint64_t size = std::min(this->size(), rhs.size());
+
+			for (uint64_t i = 0; i < size; i++) {
+				(*this)[i] = rhs[i];
+			}
+		}
+		return *this;
+	}
+};
+
+}
 
 #endif /* _Valarray_h */
 
