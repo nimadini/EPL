@@ -14,12 +14,28 @@
 #ifndef _Valarray_h
 #define _Valarray_h
 
+#include <iostream>
+#include <cstdint>
+#include <algorithm>
 #include "Vector.h"
+
 
 //using std::vector; // during development and testing
 using epl::vector; // after submission
 
 namespace epl {
+
+template <typename T>
+class valarray;
+
+template <typename Op, typename T>
+void apply_op(valarray<T> & lhs, valarray<T> const& x, valarray<T> const& y, Op op = Op{}) {
+	uint64_t size = std::min(x.size(), y.size());
+	size = std::min(size, lhs.size()); // probably not needed
+	for (uint64_t i = 0; i < size; i++) {
+		lhs[i] = op(x[i], y[i]);
+	}
+}
 
 template <typename T>
 class valarray : public vector<T> {
@@ -38,7 +54,42 @@ public:
 		}
 		return *this;
 	}
+
+	Same& operator+=(Same const& rhs) {
+		apply_op<std::plus<void>>(*this, *this, rhs);
+		return *this;
+	}
+
+	Same& operator-=(Same const& rhs) {
+		apply_op<std::minus<void>>(*this, *this, rhs);
+		return *this;
+	}
+
+
+	Same operator+(Same const& rhs) {
+		Same result(std::min(this->size(), rhs.size()));
+
+		apply_op<std::plus<void>>(result, *this, rhs);
+		return result;
+	}
+
+	Same operator-(Same const& rhs) {
+		Same result(std::min(this->size(), rhs.size()));
+
+		apply_op<std::minus<void>>(result, *this, rhs);
+		return result;
+	}
 };
+
+template <typename T>
+std::ostream& operator<<(std::ostream& out, const valarray<T>& varray) {
+	const char* pref = "";
+	for (const auto& val : varray) {
+		out << pref << val;
+		pref = ", ";
+	}
+	return out;
+}
 
 }
 
