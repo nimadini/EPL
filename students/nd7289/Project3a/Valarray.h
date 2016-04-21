@@ -97,6 +97,9 @@ public:
 
 	// changing the semantics of assignment operator
 	Same& operator=(Same const& rhs) {
+		// in this special case, not checking if-not-self only harms performance-wise, 
+		// but it's stll correct since in the assignment operator of T, this case should 
+		// be handled. In other words, (*this)[i] = rhs[i] takes care of it.
 		if (this != &rhs) {
 			uint64_t size = std::min(this->size(), rhs.size());
 
@@ -117,7 +120,6 @@ public:
 		return *this;
 	}
 
-
 	Same operator+(Same const& rhs) {
 		Same result(std::min(this->size(), rhs.size()));
 
@@ -130,6 +132,34 @@ public:
 
 		apply_op<std::minus<void>>(result, *this, rhs);
 		return result;
+	}
+};
+
+template <typename T> struct choose_ref {
+	using type = T;
+};
+
+template<typename T> struct choose_ref<valarray<T>> {
+	using type = valarray<T> const&;	
+};
+
+template <typename T> using ChooseRef = typename choose_ref<T>::type;
+
+template <typename S1Type, typename S2Type>
+class Expression {
+	using LeftType = ChooseRef<S1Type>;
+	using RightType = ChooseRef<S2Type>;
+	LeftType left;
+	RightType right;
+public:
+	Expression(S1Type const& l, S2Type const& r) :
+		left{ l }, right(r) {}
+
+	uint64_t size(void) const { return left.size() + right.size(); }
+
+	char operator[](uint64_t k) const {
+		if (k < left.size()) { return left[k]; }
+		else { return right[k - left.size()]; }
 	}
 };
 
