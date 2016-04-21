@@ -17,11 +17,14 @@
 #include <iostream>
 #include <cstdint>
 #include <algorithm>
+#include <complex>
 #include "Vector.h"
 
 
 //using std::vector; // during development and testing
 using epl::vector; // after submission
+
+using std::complex;
 
 namespace epl {
 
@@ -35,6 +38,55 @@ void apply_op(valarray<T> & lhs, valarray<T> const& x, valarray<T> const& y, Op 
 	for (uint64_t i = 0; i < size; i++) {
 		lhs[i] = op(x[i], y[i]);
 	}
+}
+
+
+template <typename>
+struct SRank;
+
+template <> struct SRank<int> { 
+	static constexpr int value = 1;  
+};
+template <> struct SRank<float> { 
+	static constexpr int value = 2; 
+};
+template <> struct SRank<double> { 
+	static constexpr int value = 3; 
+};
+template <typename T> struct SRank<complex<T>> {
+	static constexpr int value = SRank<T>::value + 2;
+};
+
+template <int>
+struct SType;
+
+template <> struct SType<1> { using type = int; };
+template <> struct SType<2> { using type = float; };
+template <> struct SType<3> { using type = double; };
+template <> struct SType<4> { using type = complex<float>; };
+template <> struct SType<5> { using type = complex<double>; };
+
+template <typename T1, typename T2>
+struct choose_type {
+	static constexpr int t1_rank = SRank<T1>::value;
+	static constexpr int t2_rank = SRank<T2>::value;
+
+	static constexpr int max_rank = (t1_rank < t2_rank) ? t2_rank : t1_rank;
+	static constexpr int min_rank = (t1_rank < t2_rank) ? t1_rank : t2_rank;
+
+	static constexpr int rank = min_rank == 3 && max_rank == 4 ? 5 : max_rank;
+
+	using type = typename SType<rank>::type;
+};
+
+template <typename T1, typename T2>
+using ChooseType = typename choose_type<T1, T2>::type;
+
+template <typename T1, typename T2>
+ChooseType<T1, T2> bax(T1 const& x, T2 const& y) {
+	/*if (x < y) { return y; }
+	else { return x; }*/
+	return x;
 }
 
 template <typename T>
