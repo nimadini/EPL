@@ -119,21 +119,21 @@ public:
 		apply_op<std::minus<void>>(*this, *this, rhs);
 		return *this;
 	}
-
-	Same operator+(Same const& rhs) {
-		Same result(std::min(this->size(), rhs.size()));
-
-		apply_op<std::plus<void>>(result, *this, rhs);
-		return result;
-	}
-
-	Same operator-(Same const& rhs) {
-		Same result(std::min(this->size(), rhs.size()));
-
-		apply_op<std::minus<void>>(result, *this, rhs);
-		return result;
-	}
 };
+
+template <typename T>
+valarray<T> operator+(valarray<T> const& lhs, valarray<T> const& rhs) {
+	valarray<T> result(std::min(lhs.size(), rhs.size()));
+	apply_op<std::plus<void>>(result, lhs, rhs);
+	return result;
+}
+
+template <typename T>
+valarray<T> operator-(valarray<T> const& lhs, valarray<T> const& rhs) {
+	valarray<T> result(std::min(lhs.size(), rhs.size()));
+	apply_op<std::minus<void>>(result, lhs, rhs);
+	return result;
+}
 
 template <typename T> struct choose_ref {
 	using type = T;
