@@ -8,7 +8,7 @@ class InstanceCounter {
 public:
         static int counter;
         InstanceCounter(void) {
-                ++counter;
+            // ++counter;
         }
 };
 

@@ -3,7 +3,6 @@
 #include <future>
 #include <chrono>
 #include "gtest/gtest.h"
-#include "Vector.h"
 #include "Valarray.h"
 
 //#define PHASE_A
@@ -46,7 +45,21 @@ namespace{
 /*****************************************************************************************/
 #if defined(PHASE_A0) | defined(PHASE_A)
 TEST(PhaseA, Initial){
-  valarray<Foo> x;
+  valarray<int> x;
   
+  x.push_back(1);
+  x.push_back(1);
+  x.push_back(1);
+
+  valarray<int> y;
+  y.push_back(3);
+  y.push_back(3);
+  y.push_back(3);
+  y.push_back(3);
+
+  y+=x;
+
+  std::cout << y << "\n";
+  // std::cout << x + y << "\n";
 }
 #endif

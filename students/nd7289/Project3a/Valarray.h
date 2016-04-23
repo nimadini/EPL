@@ -40,19 +40,12 @@ void apply_op(valarray<T> & lhs, valarray<T> const& x, valarray<T> const& y, Op 
 	}
 }
 
-
 template <typename>
 struct SRank;
 
-template <> struct SRank<int> { 
-	static constexpr int value = 1;  
-};
-template <> struct SRank<float> { 
-	static constexpr int value = 2; 
-};
-template <> struct SRank<double> { 
-	static constexpr int value = 3; 
-};
+template <> struct SRank<int> { static constexpr int value = 1; };
+template <> struct SRank<float> { static constexpr int value = 2; };
+template <> struct SRank<double> { static constexpr int value = 3; };
 template <typename T> struct SRank<complex<T>> {
 	static constexpr int value = SRank<T>::value + 2;
 };
@@ -111,12 +104,12 @@ public:
 	}
 
 	Same& operator+=(Same const& rhs) {
-		apply_op<std::plus<void>>(*this, *this, rhs);
+		apply_op<std::plus<>>(*this, *this, rhs);
 		return *this;
 	}
 
 	Same& operator-=(Same const& rhs) {
-		apply_op<std::minus<void>>(*this, *this, rhs);
+		apply_op<std::minus<>>(*this, *this, rhs);
 		return *this;
 	}
 };
@@ -124,14 +117,14 @@ public:
 template <typename T>
 valarray<T> operator+(valarray<T> const& lhs, valarray<T> const& rhs) {
 	valarray<T> result(std::min(lhs.size(), rhs.size()));
-	apply_op<std::plus<void>>(result, lhs, rhs);
+	apply_op<std::plus<>>(result, lhs, rhs);
 	return result;
 }
 
 template <typename T>
 valarray<T> operator-(valarray<T> const& lhs, valarray<T> const& rhs) {
 	valarray<T> result(std::min(lhs.size(), rhs.size()));
-	apply_op<std::minus<void>>(result, lhs, rhs);
+	apply_op<std::minus<>>(result, lhs, rhs);
 	return result;
 }
 
@@ -145,6 +138,7 @@ template<typename T> struct choose_ref<valarray<T>> {
 
 template <typename T> using ChooseRef = typename choose_ref<T>::type;
 
+// valarray proxy
 template <typename S1Type, typename S2Type>
 class Expression {
 	using LeftType = ChooseRef<S1Type>;
@@ -163,6 +157,7 @@ public:
 	}
 };
 
+// TODO: fix!
 template <typename T>
 std::ostream& operator<<(std::ostream& out, const valarray<T>& varray) {
 	const char* pref = "";
