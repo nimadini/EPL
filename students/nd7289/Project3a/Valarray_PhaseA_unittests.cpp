@@ -61,14 +61,23 @@ TEST(PhaseA, Initial){
 
   std::cout << y << "\n";*/
 
-  epl::Valarray<int> s;
-  s.push_back(10);
+  epl::Valarray<float> s;
+  s.push_back(1.5f);
+  s.push_back(1.5f);
 
-  epl::Valarray<int> t;
-  t.push_back(10);
+  epl::Valarray<double> t;
+  t.push_back(2);
+  t.push_back(2);
+  t.push_back(2);
+
+  epl::Valarray<int> z;
+  z.push_back(4);
+  z.push_back(4);
+  z.push_back(4);
 
   //epl::Valarray<int> v = 
-  s+t;
+
+  std::cout << typeid((s+t+z)[0]).name() << "\n";
 
   //std::cout << v;
   // std::cout << x + y << "\n";

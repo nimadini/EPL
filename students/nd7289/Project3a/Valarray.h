@@ -86,6 +86,7 @@ template <typename T>
 class valarray : public vector<T> {
 	using Same = valarray<T>; // defining Same type
 public:
+	using type = T;
 	using epl::vector<T>::vector; // to inherit all the constructors
 
 	// changing the semantics of assignment operator
@@ -112,6 +113,16 @@ public:
 		apply_op<std::minus<>>(*this, *this, rhs);
 		return *this;
 	}
+
+	void print(std::ostream& out) const {
+		out << (std::string const&) (*this);
+
+		const char* pref = "";
+		for (const auto& val : *this) {
+			out << pref << val;
+			pref = ", ";
+		}
+	}
 };
 
 template <typename T> struct choose_ref {
@@ -133,16 +144,25 @@ class Expression {
 	RightType right;
 	Op op;
 public:
+	using type = ChooseType<typename S1Type::type, typename S2Type::type>;
 	Expression(S1Type const& l, S2Type const& r) :
 		left{ l }, right(r) {
 			op = Op{};
 		}
 
-	uint64_t size(void) const { return left.size() + right.size(); }
+	uint64_t size(void) const { return std::min(left.size(), right.size()); }
 
-	//ChooseType<LeftType, RightType> 
-	void operator[](uint64_t k) const {
-		op(left[k], right[k]);
+	type operator[](uint64_t k) const {
+		return op(left[k], right[k]);
+	}
+
+	void print(std::ostream& out) const {
+		const char* pref = "";
+
+		for (uint64_t i = 0; i < this->size(); i++) {
+			out << pref << (*this)[i];
+			pref = ", ";
+		}
 	}
 };
 
@@ -174,14 +194,9 @@ auto operator-(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
 	return Wrap<Expression<S1, S2, std::minus<>>> { result };
 }
 
-// TODO: fix!
 template <typename T>
-std::ostream& operator<<(std::ostream& out, const valarray<T>& varray) {
-	const char* pref = "";
-	for (const auto& val : varray) {
-		out << pref << val;
-		pref = ", ";
-	}
+std::ostream& operator<<(std::ostream& out, Wrap<T> const& vec) {
+	vec.print(out);
 	return out;
 }
 
