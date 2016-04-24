@@ -82,6 +82,9 @@ ChooseType<T1, T2> bax(T1 const& x, T2 const& y) {
 	return x;
 }
 
+template <typename S1Type, typename S2Type, typename Op>
+class Expression;
+
 template <typename T>
 class valarray : public vector<T> {
 	using Same = valarray<T>; // defining Same type
@@ -104,6 +107,18 @@ public:
 		return *this;
 	}
 
+	// TODO: why should I define, when I declare the other valarray?
+	valarray(void) : vector<T>() {}
+
+	template <typename S1Type, typename S2Type, typename Op>
+	valarray(Expression<S1Type, S2Type, Op> const& expr) {
+		new (this) valarray<T>(expr.size());
+
+		for (uint64_t i=0; i < expr.size(); i++) {
+			(*this)[i] = expr[i];
+		}
+	}
+
 	Same& operator+=(Same const& rhs) {
 		apply_op<std::plus<>>(*this, *this, rhs);
 		return *this;
@@ -115,8 +130,6 @@ public:
 	}
 
 	void print(std::ostream& out) const {
-		out << (std::string const&) (*this);
-
 		const char* pref = "";
 		for (const auto& val : *this) {
 			out << pref << val;
@@ -145,12 +158,14 @@ class Expression {
 	Op op;
 public:
 	using type = ChooseType<typename S1Type::type, typename S2Type::type>;
-	Expression(S1Type const& l, S2Type const& r) :
-		left{ l }, right(r) {
-			op = Op{};
-		}
 
-	uint64_t size(void) const { return std::min(left.size(), right.size()); }
+	Expression(S1Type const& l, S2Type const& r) : 
+		left{ l }, right(r), op(Op{}) {}
+
+
+	uint64_t size(void) const { 
+		return std::min(left.size(), right.size()); 
+	}
 
 	type operator[](uint64_t k) const {
 		return op(left[k], right[k]);
@@ -163,6 +178,27 @@ public:
 			out << pref << (*this)[i];
 			pref = ", ";
 		}
+	}
+};
+
+template<typename T>
+class Scalar {
+	T value;
+public:
+	using type = T;
+	Scalar(T val) : value(val) {}
+
+	uint64_t size(void) const { 
+		return std::numeric_limits<uint64_t>::max(); // infinity
+	}
+
+	T operator[](uint64_t k) const {
+		return value;
+	}
+
+	// TODO: Sup bro?
+	void print(std::ostream& out) const {
+		out << value;
 	}
 };
 
@@ -183,6 +219,16 @@ auto operator+(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
 
 	Expression<S1, S2, std::plus<>> result{ left, right };
 	return Wrap<Expression<S1, S2, std::plus<>>> { result };
+}
+
+template <typename T, typename S>
+auto operator+(T lhs, Wrap<S> const& rhs) {
+	return Wrap<Expression<Scalar<T>, S, std::plus<>>>{Scalar<T>{ lhs }, rhs};
+}
+
+template <typename S, typename T>
+auto operator+(Wrap<S> const& lhs, T rhs) {
+	return Wrap<Expression<S, Scalar<T>, std::plus<>>>{lhs, Scalar<T>{ rhs }};
 }
 
 template<typename S1, typename S2>

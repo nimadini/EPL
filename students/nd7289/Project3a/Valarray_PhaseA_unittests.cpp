@@ -83,3 +83,27 @@ TEST(PhaseA, Initial){
   // std::cout << x + y << "\n";
 }
 #endif
+
+#if defined(PHASE_A0) | defined(PHASE_A)
+TEST(PhaseA, initializer) {
+
+  epl::Valarray<int> y;
+  y.push_back(2);
+  y.push_back(2);
+
+  std::cout << 5 + y;
+  std::cout << y + 5;
+
+}
+#endif
+
+#if defined(PHASE_A0) | defined(PHASE_A)
+TEST(PhaseA, assignment) {
+
+  epl::Valarray<int> y = {2, 2};
+
+  epl::Valarray<int> res = 5 + y;
+  std::cout << "\n\n" << res << "\n\n";
+
+}
+#endif
