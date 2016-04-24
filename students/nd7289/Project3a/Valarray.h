@@ -75,13 +75,6 @@ struct choose_type {
 template <typename T1, typename T2>
 using ChooseType = typename choose_type<T1, T2>::type;
 
-template <typename T1, typename T2>
-ChooseType<T1, T2> bax(T1 const& x, T2 const& y) {
-	/*if (x < y) { return y; }
-	else { return x; }*/
-	return x;
-}
-
 template <typename S1Type, typename S2Type, typename Op>
 class Expression;
 
