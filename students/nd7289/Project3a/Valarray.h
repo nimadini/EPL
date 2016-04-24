@@ -20,12 +20,8 @@
 #include <complex>
 #include "Vector.h"
 
-
-//using std::vector; // during development and testing
-using epl::vector; // after submission
-
 using std::complex;
-// TODO: value_type based on https://piazza.com/class/ik5telvhcgio3?cid=143
+
 namespace epl {
 
 template <typename T>
@@ -73,7 +69,6 @@ template <typename T>
 class Valarray : public epl::vector<T> {
 	using Same = Valarray<T>; // defining Same type
 public:
-	using type = T;
 	using epl::vector<T>::vector; // to inherit all the constructors
 
 	// changing the semantics of assignment operator
@@ -132,10 +127,10 @@ class Expression {
 	RightType right;
 	Op op;
 public:
-	using type = ChooseType<typename S1Type::type, typename S2Type::type>;
+	using value_type = ChooseType<typename S1Type::value_type, typename S2Type::value_type>;
 
-	using iterator = typename Valarray<type>::iterator;
-	using const_iterator = typename Valarray<type>::const_iterator;
+	using iterator = typename Valarray<value_type>::iterator;
+	using const_iterator = typename Valarray<value_type>::const_iterator;
 
 	Expression(S1Type const& l, S2Type const& r) : 
 		left{ l }, right(r), op(Op{}) {}
@@ -145,8 +140,8 @@ public:
 		return std::min(left.size(), right.size()); 
 	}
 
-	type operator[](uint64_t k) const {
-		return op((type) left[k], (type) right[k]);
+	value_type operator[](uint64_t k) const {
+		return op((value_type) left[k], (value_type) right[k]);
 	}
 
 	void print(std::ostream& out) const {
@@ -163,7 +158,7 @@ template<typename T>
 class Scalar {
 	T value;
 public:
-	using type = T;
+	using value_type = T;
 	Scalar(T val) : value(val) {}
 
 	uint64_t size(void) const { 

@@ -107,6 +107,87 @@ TEST(PhaseA2, Lazy) {
 }
 #endif
 
+#if defined(PHASE_A0) | defined(PHASE_A)
+TEST(PhaseA, Initial){
+  /*valarray<int> x;
+  
+  x.push_back(1);
+  x.push_back(1);
+  x.push_back(1);
+
+  valarray<int> y;
+  y.push_back(3);
+  y.push_back(3);
+  y.push_back(3);
+  y.push_back(3);
+
+  y+=x;
+
+  std::cout << y << "\n";*/
+
+  epl::valarray<float> s;
+  s.push_back(1.5f);
+  s.push_back(1.5f);
+
+  epl::valarray<double> t;
+  t.push_back(2);
+  t.push_back(2);
+  t.push_back(2);
+
+  epl::valarray<int> z;
+  z.push_back(4);
+  z.push_back(4);
+  z.push_back(4);
+
+  //epl::Valarray<int> v = 
+
+  std::cout << typeid((s+t+z)[0]).name() << "\n";
+
+  //std::cout << v;
+  // std::cout << x + y << "\n";
+}
+#endif
+
+#if defined(PHASE_A0) | defined(PHASE_A)
+TEST(PhaseA, initializer) {
+
+  epl::valarray<int> y;
+  y.push_back(2);
+  y.push_back(2);
+
+  std::cout << 5 + y;
+  std::cout << y + 5;
+
+}
+#endif
+
+#if defined(PHASE_A0) | defined(PHASE_A)
+TEST(PhaseA, assignment) {
+
+  epl::valarray<int> y = {2, 2};
+
+  epl::valarray<int> res = 5 + y;
+
+  res = res + y - 5;
+
+  res = res * 2;
+
+  std::cout << res;
+  std::cout << -res;
+
+}
+#endif
+
+#if defined(PHASE_A0) | defined(PHASE_A)
+TEST(PhaseA, iterator) {
+  epl::valarray<int> x = {2, 2};
+  epl::valarray<int> y = {3, 3, 3};
+
+  // (x + y).begin();
+
+}
+#endif
+
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     auto out = RUN_ALL_TESTS();
