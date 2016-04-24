@@ -104,7 +104,9 @@ TEST(PhaseA, assignment) {
 
   epl::Valarray<int> res = 5 + y;
 
-  res = res + y + 5;
+  res = res + y - 5;
+
+  res = res * 2;
 
   std::cout << res;
 

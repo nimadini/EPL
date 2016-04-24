@@ -212,6 +212,9 @@ struct Wrap : public E {
 template<typename T>
 using Valarray = Wrap<valarray<T>>;
 
+
+// operator +
+
 template<typename S1, typename S2>
 auto operator+(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
 	S1 const& left{ lhs };
@@ -231,6 +234,7 @@ auto operator+(Wrap<S> const& lhs, T rhs) {
 	return Wrap<Expression<S, Scalar<T>, std::plus<>>>{lhs, Scalar<T>{ rhs }};
 }
 
+// operator -
 template<typename S1, typename S2>
 auto operator-(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
 	S1 const& left{ lhs };
@@ -239,6 +243,57 @@ auto operator-(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
 	Expression<S1, S2, std::minus<>> result{ left, right };
 	return Wrap<Expression<S1, S2, std::minus<>>> { result };
 }
+
+template <typename T, typename S>
+auto operator-(T lhs, Wrap<S> const& rhs) {
+	return Wrap<Expression<Scalar<T>, S, std::minus<>>>{Scalar<T>{ lhs }, rhs};
+}
+
+template <typename S, typename T>
+auto operator-(Wrap<S> const& lhs, T rhs) {
+	return Wrap<Expression<S, Scalar<T>, std::minus<>>>{lhs, Scalar<T>{ rhs }};
+}
+
+// operator *
+template<typename S1, typename S2>
+auto operator*(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
+	S1 const& left{ lhs };
+	S2 const& right{ rhs };
+
+	Expression<S1, S2, std::multiplies<>> result{ left, right };
+	return Wrap<Expression<S1, S2, std::multiplies<>>> { result };
+}
+
+template <typename T, typename S>
+auto operator*(T lhs, Wrap<S> const& rhs) {
+	return Wrap<Expression<Scalar<T>, S, std::multiplies<>>>{Scalar<T>{ lhs }, rhs};
+}
+
+template <typename S, typename T>
+auto operator*(Wrap<S> const& lhs, T rhs) {
+	return Wrap<Expression<S, Scalar<T>, std::multiplies<>>>{lhs, Scalar<T>{ rhs }};
+}
+
+// operator /
+template<typename S1, typename S2>
+auto operator/(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
+	S1 const& left{ lhs };
+	S2 const& right{ rhs };
+
+	Expression<S1, S2, std::divides<>> result{ left, right };
+	return Wrap<Expression<S1, S2, std::divides<>>> { result };
+}
+
+template <typename T, typename S>
+auto operator/(T lhs, Wrap<S> const& rhs) {
+	return Wrap<Expression<Scalar<T>, S, std::divides<>>>{Scalar<T>{ lhs }, rhs};
+}
+
+template <typename S, typename T>
+auto operator/(Wrap<S> const& lhs, T rhs) {
+	return Wrap<Expression<S, Scalar<T>, std::divides<>>>{lhs, Scalar<T>{ rhs }};
+}
+
 
 template <typename T>
 std::ostream& operator<<(std::ostream& out, Wrap<T> const& vec) {
