@@ -294,6 +294,11 @@ auto operator/(Wrap<S> const& lhs, T rhs) {
 	return Wrap<Expression<S, Scalar<T>, std::divides<>>>{lhs, Scalar<T>{ rhs }};
 }
 
+// unary -
+template <typename S>
+auto operator-(Wrap<S> const& varray) {
+	return Wrap<Expression<Scalar<int>, S, std::minus<>>>{Scalar<int>{ 0 }, varray};
+}
 
 template <typename T>
 std::ostream& operator<<(std::ostream& out, Wrap<T> const& vec) {

@@ -109,6 +109,7 @@ TEST(PhaseA, assignment) {
   res = res * 2;
 
   std::cout << res;
+  std::cout << -res;
 
 }
 #endif
