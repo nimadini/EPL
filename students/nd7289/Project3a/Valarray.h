@@ -29,10 +29,10 @@ using std::complex;
 namespace epl {
 
 template <typename T>
-class valarray;
+class Valarray;
 
 template <typename Op, typename T>
-void apply_op(valarray<T> & lhs, valarray<T> const& x, valarray<T> const& y, Op op = Op{}) {
+void apply_op(Valarray<T> & lhs, Valarray<T> const& x, Valarray<T> const& y, Op op = Op{}) {
 	uint64_t size = std::min(x.size(), y.size());
 	size = std::min(size, lhs.size()); // probably not needed
 	for (uint64_t i = 0; i < size; i++) {
@@ -86,8 +86,8 @@ template <typename S1Type, typename S2Type, typename Op>
 class Expression;
 
 template <typename T>
-class valarray : public vector<T> {
-	using Same = valarray<T>; // defining Same type
+class Valarray : public vector<T> {
+	using Same = Valarray<T>; // defining Same type
 public:
 	using type = T;
 	using epl::vector<T>::vector; // to inherit all the constructors
@@ -108,11 +108,12 @@ public:
 	}
 
 	// TODO: why should I define, when I declare the other valarray?
-	valarray(void) : vector<T>() {}
+	Valarray(void) : vector<T>() {}
 
+	// TODO: if valarray of T or S1Type, S2Type???
 	template <typename S1Type, typename S2Type, typename Op>
-	valarray(Expression<S1Type, S2Type, Op> const& expr) {
-		new (this) valarray<T>(expr.size());
+	Valarray(Expression<S1Type, S2Type, Op> const& expr) {
+		new (this) Valarray<T>(expr.size());
 
 		for (uint64_t i=0; i < expr.size(); i++) {
 			(*this)[i] = expr[i];
@@ -142,8 +143,8 @@ template <typename T> struct choose_ref {
 	using type = T;
 };
 
-template<typename T> struct choose_ref<valarray<T>> {
-	using type = valarray<T> const&;	
+template<typename T> struct choose_ref<Valarray<T>> {
+	using type = Valarray<T> const&;	
 };
 
 template <typename T> using ChooseRef = typename choose_ref<T>::type;
@@ -158,6 +159,9 @@ class Expression {
 	Op op;
 public:
 	using type = ChooseType<typename S1Type::type, typename S2Type::type>;
+
+	using iterator = typename Valarray<type>::iterator;
+	using const_iterator = typename Valarray<type>::const_iterator;
 
 	Expression(S1Type const& l, S2Type const& r) : 
 		left{ l }, right(r), op(Op{}) {}
@@ -207,14 +211,28 @@ struct Wrap : public E {
 	using E::E;
 	Wrap(void) : E() {}
 	Wrap(const E& e) : E(e) {}
+
+	typename E::const_iterator begin(void) const {
+		return this->E::begin();
+	}
+
+	typename E::iterator begin(void) {
+		return this->E::begin();
+	}
+
+	typename E::const_iterator end(void) const {
+		return this->E::end();
+	}
+
+	typename E::iterator end(void) {
+		return this->E::end();
+	}
 };
 
 template<typename T>
-using Valarray = Wrap<valarray<T>>;
-
+using valarray = Wrap<Valarray<T>>;
 
 // operator +
-
 template<typename S1, typename S2>
 auto operator+(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
 	S1 const& left{ lhs };

@@ -1,115 +1,119 @@
-#include <cstdint>
-#include <stdexcept>
-#include <future>
-#include <chrono>
-#include "gtest/gtest.h"
-#include "Valarray.h"
+/*
+ * Valarray_PhaseA_unittests.cpp
+ * EPL - Spring 2016
+ */
 
-//#define PHASE_A
+#include <chrono>
+#include <complex>
+#include <cstdint>
+#include <future>
+#include <iostream>
+#include <stdexcept>
+
+#include "Valarray.h"
+#include "gtest/gtest.h"
+
+using std::cout;
+using std::endl;
+using std::string;
+using std::complex;
+
+using namespace epl;
+
+int InstanceCounter::counter = 0;
+
+template <typename X, typename Y>
+bool match(X x, Y y) {
+    double d = x - y;
+    if (d < 0) { d = -d; }
+    return d < 1.0e-9; // not really machine epsilon, but close enough
+}
+
+/*********************************************************************/
+// Phase A Tests
+/*********************************************************************/
+
+/*
+#if defined(PHASE_A0_1) | defined(PHASE_A)
+TEST(PhaseA, BracketOp) {
+    valarray<complex<double>> x(10);
+    for (int i = 0; i < 10; ++i)
+        x[i] = complex<double>(i, i);
+
+    valarray<complex<double>> y = x + x;
+    for (int i = 0; i < 10; ++i) {
+        complex<double> ans(i, i);
+        ans += ans;
+        EXPECT_TRUE(match(y[i].real(), ans.real()));
+    }
+
+    x = y;
+    int i = 0;
+    for (auto yi : x) {
+        complex<double> ans(i, i);
+        ++i;
+        ans += ans;
+        EXPECT_TRUE(match(yi.real(), ans.real()));
+    }
+}
+#endif*/
+
+#if defined(PHASE_A0_0) | defined(PHASE_A)
+TEST(PhaseA, Operators) {
+    valarray<int> x(10);
+    valarray<int> y(20);
+    x = -((2 * (1 + x - y + 1)) / 1);
+
+    for (int i = 0; i < 10; i++) {
+        EXPECT_EQ(-4, x[i]);
+    }
+}
+#endif
+
+/*
+#if defined(PHASE_A1_0) | defined(PHASE_A)
+TEST(PhaseA1, Complex) {
+    valarray<complex<float>> x(10);
+    valarray<double> y = { 1.5, 2.5, 3.5 };
+
+    for (int i = 0; i < 10; i++)
+        x[i] = complex<float>(0.0, 0.0);
+
+    valarray<complex<double>> z = y + x;
+    valarray<complex<double>> r = y + y + z;
+    EXPECT_EQ(r[0], complex<double>(4.5, 0));
+    EXPECT_EQ(r[1], complex<double>(7.5, 0));
+    EXPECT_EQ(r[2], complex<double>(10.5, 0));
+}
+#endif*/
+
+#if defined(PHASE_A2_0) | defined(PHASE_A)
+TEST(PhaseA2, Lazy) {
+    // lazy evaluation test
+    valarray <double> v1, v2, v3, v4;
+    for (int i = 0; i<10; ++i) {
+        v1.push_back(1.0);
+        v2.push_back(1.0);
+        v3.push_back(1.0);
+        v4.push_back(1.0);
+    }
+    int cnt = InstanceCounter::counter;
+    v1 + v2 - (v3 * v4);
+    EXPECT_EQ(cnt, InstanceCounter::counter);
+    
+    valarray<double> ans(10);
+    ans = v1 + v2 - (v3*v4);
+    EXPECT_TRUE(match(ans[3], (v1[3] + v2[3] - (v3[3] * v4[3]))));
+}
+#endif
+
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    auto out = RUN_ALL_TESTS();
 
 #ifdef _MSC_VER
-#define noexcept
+    system("pause");
 #endif
 
-using epl::valarray;
-
-/*****************************************************************************************/
-// Class Instrumentation
-/*****************************************************************************************/
-namespace{
-  //Class Instrumentation
-  class Foo {
-  public:
-    bool alive;
-    
-    static uint64_t constructions;
-    static uint64_t destructions;
-    static uint64_t copies;
-    static uint64_t moves;
-    static void reset(){ moves=copies=destructions=constructions=0; }
-
-    Foo(void) { alive = true; ++constructions; }
-    ~Foo(void) { destructions += alive;}
-    Foo(const Foo&) noexcept { alive = true; ++copies; }
-    Foo(Foo&& that) noexcept { that.alive = false; this->alive = true; ++moves;}
-  };
-
-  uint64_t Foo::constructions = 0;
-  uint64_t Foo::destructions = 0;
-  uint64_t Foo::copies = 0;
-  uint64_t Foo::moves = 0;
-} //namespace
-
-/*****************************************************************************************/
-// Phase A Tests
-/*****************************************************************************************/
-#if defined(PHASE_A0) | defined(PHASE_A)
-TEST(PhaseA, Initial){
-  /*valarray<int> x;
-  
-  x.push_back(1);
-  x.push_back(1);
-  x.push_back(1);
-
-  valarray<int> y;
-  y.push_back(3);
-  y.push_back(3);
-  y.push_back(3);
-  y.push_back(3);
-
-  y+=x;
-
-  std::cout << y << "\n";*/
-
-  epl::Valarray<float> s;
-  s.push_back(1.5f);
-  s.push_back(1.5f);
-
-  epl::Valarray<double> t;
-  t.push_back(2);
-  t.push_back(2);
-  t.push_back(2);
-
-  epl::Valarray<int> z;
-  z.push_back(4);
-  z.push_back(4);
-  z.push_back(4);
-
-  //epl::Valarray<int> v = 
-
-  std::cout << typeid((s+t+z)[0]).name() << "\n";
-
-  //std::cout << v;
-  // std::cout << x + y << "\n";
+    return out;
 }
-#endif
-
-#if defined(PHASE_A0) | defined(PHASE_A)
-TEST(PhaseA, initializer) {
-
-  epl::Valarray<int> y;
-  y.push_back(2);
-  y.push_back(2);
-
-  std::cout << 5 + y;
-  std::cout << y + 5;
-
-}
-#endif
-
-#if defined(PHASE_A0) | defined(PHASE_A)
-TEST(PhaseA, assignment) {
-
-  epl::Valarray<int> y = {2, 2};
-
-  epl::Valarray<int> res = 5 + y;
-
-  res = res + y - 5;
-
-  res = res * 2;
-
-  std::cout << res;
-  std::cout << -res;
-
-}
-#endif

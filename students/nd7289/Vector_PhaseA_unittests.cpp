@@ -203,17 +203,3 @@ TEST(PhaseA, PushBackCopy){
   EXPECT_EQ(11, Foo::copies);
 }
 #endif
-
-//this is the main entry point for the program.  Other
-//tests can be in other cpp files, as long as there is
-//only one of these main functions.
-int main(int argc, char** argv) {
-	::testing::InitGoogleTest(&argc, argv);
-	auto out = RUN_ALL_TESTS();
-
-#ifdef _MSC_VER
-	system("pause");
-#endif
-
-	return out;
-}
