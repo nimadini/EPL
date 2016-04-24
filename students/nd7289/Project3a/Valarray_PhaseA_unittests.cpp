@@ -103,7 +103,10 @@ TEST(PhaseA, assignment) {
   epl::Valarray<int> y = {2, 2};
 
   epl::Valarray<int> res = 5 + y;
-  std::cout << "\n\n" << res << "\n\n";
+
+  res = res + y + 5;
+
+  std::cout << res;
 
 }
 #endif

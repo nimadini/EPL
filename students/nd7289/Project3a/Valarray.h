@@ -249,4 +249,3 @@ std::ostream& operator<<(std::ostream& out, Wrap<T> const& vec) {
 }
 
 #endif /* _Valarray_h */
-
