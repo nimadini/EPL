@@ -31,15 +31,6 @@ namespace epl {
 template <typename T>
 class Valarray;
 
-template <typename Op, typename T>
-void apply_op(Valarray<T> & lhs, Valarray<T> const& x, Valarray<T> const& y, Op op = Op{}) {
-	uint64_t size = std::min(x.size(), y.size());
-	size = std::min(size, lhs.size()); // probably not needed
-	for (uint64_t i = 0; i < size; i++) {
-		lhs[i] = op(x[i], y[i]);
-	}
-}
-
 template <typename>
 struct SRank;
 
@@ -79,7 +70,7 @@ template <typename S1Type, typename S2Type, typename Op>
 class Expression;
 
 template <typename T>
-class Valarray : public vector<T> {
+class Valarray : public epl::vector<T> {
 	using Same = Valarray<T>; // defining Same type
 public:
 	using type = T;
@@ -111,16 +102,6 @@ public:
 		for (uint64_t i=0; i < expr.size(); i++) {
 			(*this)[i] = expr[i];
 		}
-	}
-
-	Same& operator+=(Same const& rhs) {
-		apply_op<std::plus<>>(*this, *this, rhs);
-		return *this;
-	}
-
-	Same& operator-=(Same const& rhs) {
-		apply_op<std::minus<>>(*this, *this, rhs);
-		return *this;
 	}
 
 	void print(std::ostream& out) const {
