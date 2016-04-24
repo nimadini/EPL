@@ -25,7 +25,7 @@
 using epl::vector; // after submission
 
 using std::complex;
-
+// TODO: value_type based on https://piazza.com/class/ik5telvhcgio3?cid=143
 namespace epl {
 
 template <typename T>
