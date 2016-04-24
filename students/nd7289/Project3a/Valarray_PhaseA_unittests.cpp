@@ -33,7 +33,7 @@ bool match(X x, Y y) {
 // Phase A Tests
 /*********************************************************************/
 
-/*
+
 #if defined(PHASE_A0_1) | defined(PHASE_A)
 TEST(PhaseA, BracketOp) {
     valarray<complex<double>> x(10);
@@ -56,7 +56,7 @@ TEST(PhaseA, BracketOp) {
         EXPECT_TRUE(match(yi.real(), ans.real()));
     }
 }
-#endif*/
+#endif
 
 #if defined(PHASE_A0_0) | defined(PHASE_A)
 TEST(PhaseA, Operators) {
@@ -70,7 +70,7 @@ TEST(PhaseA, Operators) {
 }
 #endif
 
-/*
+
 #if defined(PHASE_A1_0) | defined(PHASE_A)
 TEST(PhaseA1, Complex) {
     valarray<complex<float>> x(10);
@@ -85,7 +85,7 @@ TEST(PhaseA1, Complex) {
     EXPECT_EQ(r[1], complex<double>(7.5, 0));
     EXPECT_EQ(r[2], complex<double>(10.5, 0));
 }
-#endif*/
+#endif
 
 #if defined(PHASE_A2_0) | defined(PHASE_A)
 TEST(PhaseA2, Lazy) {

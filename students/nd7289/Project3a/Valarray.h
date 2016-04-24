@@ -165,7 +165,7 @@ public:
 	}
 
 	type operator[](uint64_t k) const {
-		return op(left[k], right[k]);
+		return op((type) left[k], (type) right[k]);
 	}
 
 	void print(std::ostream& out) const {
