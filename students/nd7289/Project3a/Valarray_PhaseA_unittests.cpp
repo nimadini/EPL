@@ -45,7 +45,7 @@ namespace{
 /*****************************************************************************************/
 #if defined(PHASE_A0) | defined(PHASE_A)
 TEST(PhaseA, Initial){
-  valarray<int> x;
+  /*valarray<int> x;
   
   x.push_back(1);
   x.push_back(1);
@@ -59,7 +59,18 @@ TEST(PhaseA, Initial){
 
   y+=x;
 
-  std::cout << y << "\n";
+  std::cout << y << "\n";*/
+
+  epl::Valarray<int> s;
+  s.push_back(10);
+
+  epl::Valarray<int> t;
+  t.push_back(10);
+
+  //epl::Valarray<int> v = 
+  s+t;
+
+  //std::cout << v;
   // std::cout << x + y << "\n";
 }
 #endif

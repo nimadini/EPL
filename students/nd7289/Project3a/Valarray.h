@@ -114,20 +114,6 @@ public:
 	}
 };
 
-template <typename T>
-valarray<T> operator+(valarray<T> const& lhs, valarray<T> const& rhs) {
-	valarray<T> result(std::min(lhs.size(), rhs.size()));
-	apply_op<std::plus<>>(result, lhs, rhs);
-	return result;
-}
-
-template <typename T>
-valarray<T> operator-(valarray<T> const& lhs, valarray<T> const& rhs) {
-	valarray<T> result(std::min(lhs.size(), rhs.size()));
-	apply_op<std::minus<>>(result, lhs, rhs);
-	return result;
-}
-
 template <typename T> struct choose_ref {
 	using type = T;
 };
@@ -139,23 +125,54 @@ template<typename T> struct choose_ref<valarray<T>> {
 template <typename T> using ChooseRef = typename choose_ref<T>::type;
 
 // valarray proxy
-template <typename S1Type, typename S2Type>
+template <typename S1Type, typename S2Type, typename Op>
 class Expression {
 	using LeftType = ChooseRef<S1Type>;
 	using RightType = ChooseRef<S2Type>;
 	LeftType left;
 	RightType right;
+	Op op;
 public:
 	Expression(S1Type const& l, S2Type const& r) :
-		left{ l }, right(r) {}
+		left{ l }, right(r) {
+			op = Op{};
+		}
 
 	uint64_t size(void) const { return left.size() + right.size(); }
 
-	char operator[](uint64_t k) const {
-		if (k < left.size()) { return left[k]; }
-		else { return right[k - left.size()]; }
+	//ChooseType<LeftType, RightType> 
+	void operator[](uint64_t k) const {
+		op(left[k], right[k]);
 	}
 };
+
+template <typename E>
+struct Wrap : public E {
+	using E::E;
+	Wrap(void) : E() {}
+	Wrap(const E& e) : E(e) {}
+};
+
+template<typename T>
+using Valarray = Wrap<valarray<T>>;
+
+template<typename S1, typename S2>
+auto operator+(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
+	S1 const& left{ lhs };
+	S2 const& right{ rhs };
+
+	Expression<S1, S2, std::plus<>> result{ left, right };
+	return Wrap<Expression<S1, S2, std::plus<>>> { result };
+}
+
+template<typename S1, typename S2>
+auto operator-(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
+	S1 const& left{ lhs };
+	S2 const& right{ rhs };
+
+	Expression<S1, S2, std::minus<>> result{ left, right };
+	return Wrap<Expression<S1, S2, std::minus<>>> { result };
+}
 
 // TODO: fix!
 template <typename T>
