@@ -87,16 +87,23 @@ public:
 	}
 
 	// TODO: why should I define, when I declare the other valarray?
-	Valarray(void) : vector<T>() {}
+	Valarray(void) : epl::vector<T>() {
+		std::cout<<"\nINHERE!!!!!\n";
+	}
 
 	// TODO: if valarray of T or S1Type, S2Type???
 	template <typename S1Type, typename S2Type, typename Op>
 	Valarray(Expression<S1Type, S2Type, Op> const& expr) {
-		new (this) Valarray<T>(expr.size());
+
+		std::cout<<"INSTANCES IN EXPR TO VALARRAY1: " << InstanceCounter::counter << "\n";
+		new (this) Valarray<ChooseType<typename S1Type::value_type, typename S2Type::value_type>>(expr.size());
+		std::cout<<"INSTANCES IN EXPR TO VALARRAY2: " << InstanceCounter::counter << "\n";
 
 		for (uint64_t i=0; i < expr.size(); i++) {
 			(*this)[i] = expr[i];
 		}
+		std::cout<<"INSTANCES IN EXPR TO VALARRAY3: " << InstanceCounter::counter << "\n";
+
 	}
 
 	void print(std::ostream& out) const {
@@ -108,9 +115,15 @@ public:
 	}
 };
 
+/*
+template <typename E>
+struct Wrap; */
+
 template <typename T> struct choose_ref {
 	using type = T;
 };
+
+// TODO HERE: template<typename T> struct choose_ref<Wrap<Valarray<T>>> {
 
 template<typename T> struct choose_ref<Valarray<T>> {
 	using type = Valarray<T> const&;	
@@ -143,6 +156,18 @@ public:
 	value_type operator[](uint64_t k) const {
 		return op((value_type) left[k], (value_type) right[k]);
 	}
+
+	// TODO:: operator[] non-const???
+
+	// TODO:: why do we need an assignment operator?
+
+	// issues: https://piazza.com/class/ik5telvhcgio3?cid=129
+
+	/*Expression<S1Type, S2Type, Op>& operator=(const Expression<S1Type, S2Type, Op>& that) {
+		left = (LeftType) that.left;
+		right = (RightType) that.right;
+		op = Op{};
+	}*/
 
 	void print(std::ostream& out) const {
 		const char* pref = "";

@@ -45,6 +45,7 @@ TEST(PhaseA, BracketOp) {
         complex<double> ans(i, i);
         ans += ans;
         EXPECT_TRUE(match(y[i].real(), ans.real()));
+        EXPECT_TRUE(match(y[i].imag(), ans.imag()));
     }
 
     x = y;
@@ -54,6 +55,7 @@ TEST(PhaseA, BracketOp) {
         ++i;
         ans += ans;
         EXPECT_TRUE(match(yi.real(), ans.real()));
+        EXPECT_TRUE(match(yi.imag(), ans.imag()));
     }
 }
 #endif
@@ -63,6 +65,8 @@ TEST(PhaseA, Operators) {
     valarray<int> x(10);
     valarray<int> y(20);
     x = -((2 * (1 + x - y + 1)) / 1);
+
+    EXPECT_EQ(10, x.size());
 
     for (int i = 0; i < 10; i++) {
         EXPECT_EQ(-4, x[i]);
@@ -80,10 +84,24 @@ TEST(PhaseA1, Complex) {
         x[i] = complex<float>(0.0, 0.0);
 
     valarray<complex<double>> z = y + x;
+
+    auto t = y + x;
+    EXPECT_EQ(t[0], complex<double>(1.5, 0));
+
     valarray<complex<double>> r = y + y + z;
     EXPECT_EQ(r[0], complex<double>(4.5, 0));
     EXPECT_EQ(r[1], complex<double>(7.5, 0));
     EXPECT_EQ(r[2], complex<double>(10.5, 0));
+
+    valarray<int> elems{1, 1, 1};
+
+    double d = 1.5;
+    float f = 1.0;
+    auto result = elems + f + d;
+    EXPECT_EQ(typeid(result[0]), typeid(double));
+
+    auto result2 = elems + f + d + complex<double>(1.0, 1.0);
+    EXPECT_EQ(result2[0], complex<double>(4.5, 1.0));
 }
 #endif
 
@@ -106,6 +124,77 @@ TEST(PhaseA2, Lazy) {
     EXPECT_TRUE(match(ans[3], (v1[3] + v2[3] - (v3[3] * v4[3]))));
 }
 #endif
+
+#if defined(PHASE_A2_0) | defined(PHASE_A)
+TEST(PhaseA2, LazyAccurate) {
+    // lazy evaluation test
+    valarray <double> v1, v2, v3, v4, v5, v6;
+    for (int i = 0; i<10; ++i) {
+        v1.push_back(1.0);
+        v2.push_back(1.0);
+        v3.push_back(1.0);
+        v4.push_back(1.0);
+        v5.push_back(1.0);
+        v6.push_back(1.0);
+    }
+    int cnt = InstanceCounter::counter;
+    v1 + v2 - (v3 * v4);
+    EXPECT_EQ(cnt, InstanceCounter::counter);
+    
+    valarray<double> ans(4);
+
+    cnt = InstanceCounter::counter;
+    
+    std::cout<<"INSTANCES IN TESTPOINT1: " << InstanceCounter::counter << "\n";
+
+    ans = v1 + v2 - v3 * v4 + v5 / v6;
+
+    std::cout<<"INSTANCES IN TESTPOINT2: " << InstanceCounter::counter << "\n";
+
+    EXPECT_TRUE(InstanceCounter::counter - cnt <= 2);
+}
+#endif
+
+#if defined(PHASE_A1_0) | defined(PHASE_A)
+TEST(PhaseA1, primitivePromotions) {
+    valarray<int> x{1, 1, 1};
+    complex<double> d{ 1.5, 1.5 };
+    auto z = x + d;
+
+    std::cout << z[0] << "\n**\n";
+}
+#endif
+
+/*
+#if defined(PHASE_A1_0) | defined(PHASE_A)
+TEST(PhaseA1, CreationCTor) {
+    valarray<int> x{1, 1, 1};
+    valarray<double> y{1.5, 1.5};
+
+    auto z = x + y;
+
+    std::cout << "$$HERETYPE$$:\n";
+    std::cout << typeid(z).name() << "\n**********\n";
+
+}
+#endif
+*/
+
+#if defined(PHASE_A1_0) | defined(PHASE_A)
+TEST(PhaseA1, EXPR) {
+    valarray<int> x{ 1, 1, 1 };
+    valarray<double> y{ 2.5, 2.5 };
+
+    Expression<valarray<int>, valarray<double>, std::plus<>> expr {x, y};
+
+    valarray<int> z {3, 3, 3};
+    valarray<double> w{ 4.5, 4.5 };
+
+    expr = Expression<valarray<int>, valarray<double>, std::plus<>>{ z, w };
+}
+#endif
+
+
 
 #if defined(PHASE_A0) | defined(PHASE_A)
 TEST(PhaseA, Initial){
@@ -185,6 +274,17 @@ TEST(PhaseA, iterator) {
 
   // (x + y).begin();
 
+}
+#endif
+
+#if defined(PHASE_A0) | defined(PHASE_A)
+TEST(PhaseA, piazza_131) {
+  valarray<complex<float>> x{1,2,3};
+ 
+  valarray<complex<double>> y(3);  y = x;  // copy assignment
+  valarray<complex<double>> z = x;  // conversion
+  valarray<complex<double>> t{x};  // copy construct
+  valarray<complex<int>> s{x};  // reduced precision
 }
 #endif
 

@@ -47,6 +47,7 @@ public:
 		send = sbegin + capacity;
 		dbegin = dend = sbegin;
 
+		std::cout<<"\nZ1\n";
         InstanceCounter();
 	}
 
@@ -61,6 +62,7 @@ public:
 			++dend;
 		}
 
+		std::cout<<"\nZ2\n";
         InstanceCounter();
 	}
 
@@ -68,6 +70,7 @@ public:
         std::cout << "epl::vector copy constructor" << std::endl;
         copy(that);
 
+        std::cout<<"\nZ3\n";
         InstanceCounter();
     }
 
@@ -83,6 +86,7 @@ public:
 			++dend;
 		}
 
+		std::cout<<"\nZ4\n";
         InstanceCounter();
 	}
 
@@ -90,6 +94,7 @@ public:
 	vector(Iterator b, Iterator e) {
 		constructFromIterator(b, e, typename std::iterator_traits<Iterator>::iterator_category());
 
+		std::cout<<"\nZ5\n";
         InstanceCounter();
 	}
 
@@ -100,6 +105,7 @@ public:
 	vector(vector<T>&& that) {
         move(std::move(that)); 
 
+        std::cout<<"\nZ6\n";
         InstanceCounter();
 	}
 	
