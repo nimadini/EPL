@@ -65,6 +65,9 @@ using ChooseType = typename choose_type<T1, T2>::type;
 template <typename S1Type, typename S2Type, typename Op>
 class Expression;
 
+template <typename E>
+struct Wrap; 
+
 template <typename T>
 class Valarray : public epl::vector<T> {
 	using Same = Valarray<T>; // defining Same type
@@ -87,23 +90,16 @@ public:
 	}
 
 	// TODO: why should I define, when I declare the other valarray?
-	Valarray(void) : epl::vector<T>() {
-		std::cout<<"\nINHERE!!!!!\n";
-	}
+	Valarray(void) : epl::vector<T>() {}
 
 	// TODO: if valarray of T or S1Type, S2Type???
 	template <typename S1Type, typename S2Type, typename Op>
 	Valarray(Expression<S1Type, S2Type, Op> const& expr) {
-
-		std::cout<<"INSTANCES IN EXPR TO VALARRAY1: " << InstanceCounter::counter << "\n";
 		new (this) Valarray<ChooseType<typename S1Type::value_type, typename S2Type::value_type>>(expr.size());
-		std::cout<<"INSTANCES IN EXPR TO VALARRAY2: " << InstanceCounter::counter << "\n";
 
 		for (uint64_t i=0; i < expr.size(); i++) {
 			(*this)[i] = expr[i];
 		}
-		std::cout<<"INSTANCES IN EXPR TO VALARRAY3: " << InstanceCounter::counter << "\n";
-
 	}
 
 	void print(std::ostream& out) const {
@@ -148,8 +144,7 @@ public:
 	Expression(S1Type const& l, S2Type const& r) : 
 		left{ l }, right(r), op(Op{}) {}
 
-
-	uint64_t size(void) const { 
+	uint64_t size(void) const {
 		return std::min(left.size(), right.size()); 
 	}
 
@@ -163,11 +158,7 @@ public:
 
 	// issues: https://piazza.com/class/ik5telvhcgio3?cid=129
 
-	/*Expression<S1Type, S2Type, Op>& operator=(const Expression<S1Type, S2Type, Op>& that) {
-		left = (LeftType) that.left;
-		right = (RightType) that.right;
-		op = Op{};
-	}*/
+	Expression<S1Type, S2Type, Op>& operator=(const Expression<S1Type, S2Type, Op>& that) = default;
 
 	void print(std::ostream& out) const {
 		const char* pref = "";
@@ -204,7 +195,20 @@ template <typename E>
 struct Wrap : public E {
 	using E::E;
 	Wrap(void) : E() {}
-	Wrap(const E& e) : E(e) {}
+	Wrap(E const& e) : E(e) {}
+	~Wrap(void) = default;
+
+	template<typename S>
+	Wrap<E>& operator=(Wrap<S> const& rhs) {
+		S const& right { rhs };
+		uint64_t size = std::min(this->size(), right.size());
+
+		for (uint64_t i = 0; i < size; i++) {
+			(*this)[i] = right[i];
+		}
+		
+		return *this;
+	}
 
 	typename E::const_iterator begin(void) const {
 		return this->E::begin();
@@ -228,7 +232,8 @@ using valarray = Wrap<Valarray<T>>;
 
 // operator +
 template<typename S1, typename S2>
-auto operator+(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
+Wrap<Expression<S1, S2, std::plus<>>>
+operator+(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
 	S1 const& left{ lhs };
 	S2 const& right{ rhs };
 
@@ -237,18 +242,21 @@ auto operator+(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
 }
 
 template <typename T, typename S>
-auto operator+(T lhs, Wrap<S> const& rhs) {
+Wrap<Expression<Scalar<T>, S, std::plus<>>>
+operator+(T lhs, Wrap<S> const& rhs) {
 	return Wrap<Expression<Scalar<T>, S, std::plus<>>>{Scalar<T>{ lhs }, rhs};
 }
 
 template <typename S, typename T>
-auto operator+(Wrap<S> const& lhs, T rhs) {
+Wrap<Expression<S, Scalar<T>, std::plus<>>>
+operator+(Wrap<S> const& lhs, T rhs) {
 	return Wrap<Expression<S, Scalar<T>, std::plus<>>>{lhs, Scalar<T>{ rhs }};
 }
 
 // operator -
 template<typename S1, typename S2>
-auto operator-(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
+Wrap<Expression<S1, S2, std::minus<>>> 
+operator-(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
 	S1 const& left{ lhs };
 	S2 const& right{ rhs };
 
@@ -257,18 +265,21 @@ auto operator-(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
 }
 
 template <typename T, typename S>
-auto operator-(T lhs, Wrap<S> const& rhs) {
+Wrap<Expression<Scalar<T>, S, std::minus<>>>
+operator-(T lhs, Wrap<S> const& rhs) {
 	return Wrap<Expression<Scalar<T>, S, std::minus<>>>{Scalar<T>{ lhs }, rhs};
 }
 
 template <typename S, typename T>
-auto operator-(Wrap<S> const& lhs, T rhs) {
+Wrap<Expression<S, Scalar<T>, std::minus<>>>
+operator-(Wrap<S> const& lhs, T rhs) {
 	return Wrap<Expression<S, Scalar<T>, std::minus<>>>{lhs, Scalar<T>{ rhs }};
 }
 
 // operator *
 template<typename S1, typename S2>
-auto operator*(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
+Wrap<Expression<S1, S2, std::multiplies<>>>
+operator*(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
 	S1 const& left{ lhs };
 	S2 const& right{ rhs };
 
@@ -277,18 +288,21 @@ auto operator*(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
 }
 
 template <typename T, typename S>
-auto operator*(T lhs, Wrap<S> const& rhs) {
+Wrap<Expression<Scalar<T>, S, std::multiplies<>>>
+operator*(T lhs, Wrap<S> const& rhs) {
 	return Wrap<Expression<Scalar<T>, S, std::multiplies<>>>{Scalar<T>{ lhs }, rhs};
 }
 
 template <typename S, typename T>
-auto operator*(Wrap<S> const& lhs, T rhs) {
+Wrap<Expression<S, Scalar<T>, std::multiplies<>>>
+operator*(Wrap<S> const& lhs, T rhs) {
 	return Wrap<Expression<S, Scalar<T>, std::multiplies<>>>{lhs, Scalar<T>{ rhs }};
 }
 
 // operator /
 template<typename S1, typename S2>
-auto operator/(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
+Wrap<Expression<S1, S2, std::divides<>>>
+operator/(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
 	S1 const& left{ lhs };
 	S2 const& right{ rhs };
 
@@ -297,18 +311,21 @@ auto operator/(Wrap<S1> const& lhs, Wrap<S2> const& rhs) {
 }
 
 template <typename T, typename S>
-auto operator/(T lhs, Wrap<S> const& rhs) {
+Wrap<Expression<Scalar<T>, S, std::divides<>>> 
+operator/(T lhs, Wrap<S> const& rhs) {
 	return Wrap<Expression<Scalar<T>, S, std::divides<>>>{Scalar<T>{ lhs }, rhs};
 }
 
 template <typename S, typename T>
-auto operator/(Wrap<S> const& lhs, T rhs) {
+Wrap<Expression<S, Scalar<T>, std::divides<>>>
+operator/(Wrap<S> const& lhs, T rhs) {
 	return Wrap<Expression<S, Scalar<T>, std::divides<>>>{lhs, Scalar<T>{ rhs }};
 }
 
 // unary -
 template <typename S>
-auto operator-(Wrap<S> const& varray) {
+Wrap<Expression<Scalar<int>, S, std::minus<>>>
+operator-(Wrap<S> const& varray) {
 	return Wrap<Expression<Scalar<int>, S, std::minus<>>>{Scalar<int>{ 0 }, varray};
 }
 

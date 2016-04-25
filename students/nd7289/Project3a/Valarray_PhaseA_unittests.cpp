@@ -141,17 +141,13 @@ TEST(PhaseA2, LazyAccurate) {
     v1 + v2 - (v3 * v4);
     EXPECT_EQ(cnt, InstanceCounter::counter);
     
-    valarray<double> ans(4);
+    valarray<double> ans(10);
 
     cnt = InstanceCounter::counter;
     
-    std::cout<<"INSTANCES IN TESTPOINT1: " << InstanceCounter::counter << "\n";
-
     ans = v1 + v2 - v3 * v4 + v5 / v6;
 
-    std::cout<<"INSTANCES IN TESTPOINT2: " << InstanceCounter::counter << "\n";
-
-    EXPECT_TRUE(InstanceCounter::counter - cnt <= 2);
+    EXPECT_TRUE(InstanceCounter::counter - cnt == 0);
 }
 #endif
 
