@@ -75,7 +75,7 @@ public:
 	using epl::vector<T>::vector; // to inherit all the constructors
 
 	// changing the semantics of assignment operator
-	Same& operator=(Same const& rhs) {
+	/*Same& operator=(Same const& rhs) {
 		// in this special case, not checking if-not-self only harms performance-wise, 
 		// but it's stll correct since in the assignment operator of T, this case should 
 		// be handled. In other words, (*this)[i] = rhs[i] takes care of it.
@@ -87,15 +87,18 @@ public:
 			}
 		}
 		return *this;
-	}
+	}*/
+
+	~Valarray(void) = default;
 
 	// TODO: why should I define, when I declare the other valarray?
 	Valarray(void) : epl::vector<T>() {}
 
-	// TODO: if valarray of T or S1Type, S2Type???
+	// Valarray of T or S1Type, S2Type???
+	// can be done with with : other constructor
 	template <typename S1Type, typename S2Type, typename Op>
-	Valarray(Expression<S1Type, S2Type, Op> const& expr) {
-		new (this) Valarray<ChooseType<typename S1Type::value_type, typename S2Type::value_type>>(expr.size());
+	Valarray(Wrap<Expression<S1Type, S2Type, Op>> const& expression) : Valarray<T>(expression.size()) {
+		Expression<S1Type, S2Type, Op> const& expr{ expression };
 
 		for (uint64_t i=0; i < expr.size(); i++) {
 			(*this)[i] = expr[i];
@@ -144,6 +147,10 @@ public:
 	Expression(S1Type const& l, S2Type const& r) : 
 		left{ l }, right(r), op(Op{}) {}
 
+	~Expression(void) = default;
+
+	Expression<S1Type, S2Type, Op>& operator=(const Expression<S1Type, S2Type, Op>& that) = default;
+
 	uint64_t size(void) const {
 		return std::min(left.size(), right.size()); 
 	}
@@ -151,14 +158,6 @@ public:
 	value_type operator[](uint64_t k) const {
 		return op((value_type) left[k], (value_type) right[k]);
 	}
-
-	// TODO:: operator[] non-const???
-
-	// TODO:: why do we need an assignment operator?
-
-	// issues: https://piazza.com/class/ik5telvhcgio3?cid=129
-
-	Expression<S1Type, S2Type, Op>& operator=(const Expression<S1Type, S2Type, Op>& that) = default;
 
 	void print(std::ostream& out) const {
 		const char* pref = "";
