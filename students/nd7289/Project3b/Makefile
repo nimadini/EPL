@@ -21,7 +21,7 @@ test: $(TEST)
 	@./$(TEST)
 
 $(TEST): $(OBJS)
-	$(CXX) $^ $(EXTRA_TESTS) $(GTEST_LIB) $(DEFS) $(CXXFLAGS)  -pthread -o $@
+	$(CXX) $^ $(EXTRA_TESTS) $(GTEST_LIB) $(DEFS) $(CXXFLAGS) -o $@
 
 #<Automatic Dependency Generation>
 -include $(DEPS)
