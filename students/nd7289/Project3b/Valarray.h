@@ -74,28 +74,10 @@ class Valarray : public epl::vector<T> {
 public:
 	using epl::vector<T>::vector; // to inherit all the constructors
 
-	// changing the semantics of assignment operator
-	/*Same& operator=(Same const& rhs) {
-		// in this special case, not checking if-not-self only harms performance-wise, 
-		// but it's stll correct since in the assignment operator of T, this case should 
-		// be handled. In other words, (*this)[i] = rhs[i] takes care of it.
-		if (this != &rhs) {
-			uint64_t size = std::min(this->size(), rhs.size());
-
-			for (uint64_t i = 0; i < size; i++) {
-				(*this)[i] = rhs[i];
-			}
-		}
-		return *this;
-	}*/
-
 	~Valarray(void) = default;
 
-	// TODO: why should I define, when I declare the other valarray?
 	Valarray(void) : epl::vector<T>() {}
 
-	// Valarray of T or S1Type, S2Type???
-	// can be done with with : other constructor
 	template <typename S1Type, typename S2Type, typename Op>
 	Valarray(Wrap<Expression<S1Type, S2Type, Op>> const& expression) : Valarray<T>(expression.size()) {
 		Expression<S1Type, S2Type, Op> const& expr{ expression };
