@@ -463,6 +463,18 @@ TEST(PhaseA2, LazyEvalOps) {
 #endif
 
 
+#if defined(PHASE_A2_0) | defined(PHASE_A)
+TEST(PhaseA2, newShit) {
+   
+valarray<int> a1{1, 2};
+valarray<double> a2{3.5, 3.2};
+std::cout << a1 + a2 << std::endl; // prints {4.5, 5.2}
+valarray<int> result = a1 + a2;
+std::cout << result << std::endl; // prints {4, 5}
+}
+#endif
+
+
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     auto out = RUN_ALL_TESTS();
