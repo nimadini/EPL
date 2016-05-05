@@ -60,8 +60,20 @@ struct choose_type {
 	using type = typename SType<rank>::type;
 };
 
+template <typename T>
+struct sqrt_type {
+	static constexpr int rank = SRank<T>::value;
+
+	static constexpr int promoted_rank = rank < 4 ? 3 : 5;
+
+	using type = typename SType<promoted_rank>::type;
+};
+
 template <typename T1, typename T2>
 using ChooseType = typename choose_type<T1, T2>::type;
+
+template <typename T>
+using SqrtType = typename sqrt_type<T>::type;
 
 template <typename S1Type, typename S2Type, typename Op>
 class Expression;
@@ -127,8 +139,8 @@ public:
 	using iterator = typename Valarray<value_type>::iterator;
 	using const_iterator = typename Valarray<value_type>::const_iterator;
 
-	Expression(S1Type const& l, S2Type const& r) : 
-		left{ l }, right(r), op(Op{}) {}
+	Expression(S1Type const& l, S2Type const& r, Op _op = Op{}) : 
+		left{ l }, right(r), op(_op) {}
 
 	~Expression(void) = default;
 
@@ -199,6 +211,13 @@ struct UnaryWrap {
 	}
 };
 
+template<typename T>
+struct my_sqrt {
+	constexpr SqrtType<T> operator()(T const& arg) const {
+	    return std::sqrt(arg);
+	}
+};
+
 template <typename E>
 struct Wrap : public E {
 	using E::E;
@@ -224,8 +243,16 @@ struct Wrap : public E {
 	apply(Op op) {
 		E const& left{ *this };
 
-		Expression<E, UnaryWrap, Op> result{ left, UnaryWrap{} };
+		Expression<E, UnaryWrap, Op> result{ left, UnaryWrap{}, op };
 		return Wrap<Expression<E, UnaryWrap, Op>> { result };
+	}
+
+	Wrap<Expression<E, UnaryWrap, my_sqrt<value_type>>> 
+	sqrt(void) {
+		E const& left{ *this };
+
+		Expression<E, UnaryWrap, my_sqrt<value_type>> result{ left, UnaryWrap{} };
+		return Wrap<Expression<E, UnaryWrap, my_sqrt<value_type>>> { result };
 	}
 
 	value_type sum(void) {

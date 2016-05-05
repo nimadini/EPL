@@ -98,7 +98,7 @@ TEST(PhaseB, BasicOperation) {
 }
 #endif
 
-/*
+
 #if defined(PHASE_B0_1) | defined(PHASE_B)
 TEST(PhaseB, Lazy) {
     {
@@ -216,8 +216,8 @@ TEST(PhaseB, ValarrayToScalarOp) {
     }
 }
 #endif
-*/
-/*
+
+
 #if defined(PHASE_B1_0) | defined(PHASE_B)
 TEST(PhaseB1, Sqrt) {
     valarray<int> v1(10);
@@ -229,7 +229,7 @@ TEST(PhaseB1, Sqrt) {
     }
 }
 #endif
-*/
+
 
 #if defined(PHASE_B1_1) | defined(PHASE_B)
 TEST(PhaseB1, Apply) {
@@ -257,7 +257,7 @@ TEST(PhaseB1, Accumulate) {
 }
 #endif
 
-/*
+
 #if defined(PHASE_B1_3) | defined(PHASE_B)
 TEST(PhaseB1, Iterator) {
     valarray<int> x(10);
@@ -272,6 +272,7 @@ TEST(PhaseB1, Iterator) {
     }
 }
 #endif
+
 
 #if defined(PHASE_B1_4) | defined(PHASE_B)
 template <typename T>
@@ -341,4 +342,3 @@ TEST(PhaseB1, ApplyAccumulate) {
     }
 }
 #endif
-*/
