@@ -21,6 +21,7 @@
 #include "Vector.h"
 
 using std::complex;
+using std::declval;
 
 namespace epl {
 
@@ -137,8 +138,20 @@ public:
 		return std::min(left.size(), right.size()); 
 	}
 
-	value_type operator[](uint64_t k) const {
+	template <typename N, typename... not_used>
+	value_type operator_bracket(uint64_t k, not_used...) const {
 		return op((value_type) left[k], (value_type) right[k]);
+	}
+
+	// S1Type::value_type should also work as return type and casting...
+	template <typename N, typename test=decltype(declval<N>().foo(0))>
+	value_type operator_bracket(uint64_t k) const {
+		return op((value_type) left[k]);
+	}
+
+
+	value_type operator[](uint64_t k) const {
+		return operator_bracket<RightType>(k);
 	}
 
 	void print(std::ostream& out) const {
@@ -172,12 +185,27 @@ public:
 	}
 };
 
+struct UnaryWrap {
+	bool unary;
+
+	using value_type = int; // lowest type
+
+	void foo(int) {}
+
+	UnaryWrap(void) = default;
+
+	uint64_t size(void) const { 
+		return std::numeric_limits<uint64_t>::max(); // infinity
+	}
+};
+
 template <typename E>
 struct Wrap : public E {
 	using E::E;
 	Wrap(void) : E() {}
 	Wrap(E const& e) : E(e) {}
 	~Wrap(void) = default;
+	using value_type = typename E::value_type;
 
 	template<typename S>
 	Wrap<E>& operator=(Wrap<S> const& rhs) {
@@ -189,6 +217,34 @@ struct Wrap : public E {
 		}
 		
 		return *this;
+	}
+
+	template<typename Op>
+	Wrap<Expression<E, UnaryWrap, Op>> 
+	apply(Op op) {
+		E const& left{ *this };
+
+		Expression<E, UnaryWrap, Op> result{ left, UnaryWrap{} };
+		return Wrap<Expression<E, UnaryWrap, Op>> { result };
+	}
+
+	value_type sum(void) {
+		return accumulate(std::plus<>{});
+	}
+
+	template<typename Op>
+	value_type accumulate(Op op) {
+		if (this->size() < 1) {
+			return 0;
+		}
+
+		value_type result = (*this)[0];
+
+		for (uint64_t i = 1; i < this->size(); i++) {
+			result = op((value_type) result, (value_type) (*this)[i]);
+		}
+
+		return result;
 	}
 
 	typename E::const_iterator begin(void) const {
