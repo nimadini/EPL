@@ -136,8 +136,8 @@ class Expression {
 public:
 	using value_type = ChooseType<typename S1Type::value_type, typename S2Type::value_type>;
 
-	using iterator = typename Valarray<value_type>::iterator;
-	using const_iterator = typename Valarray<value_type>::const_iterator;
+	// using iterator = typename Valarray<value_type>::iterator;
+	// using const_iterator = typename Valarray<value_type>::const_iterator;
 
 	Expression(S1Type const& l, S2Type const& r, Op _op = Op{}) : 
 		left{ l }, right(r), op(_op) {}
@@ -151,18 +151,18 @@ public:
 	}
 
 	template <typename N, typename... not_used>
-	value_type operator_bracket(uint64_t k, not_used...) const {
+	auto operator_bracket(uint64_t k, not_used...) const {
 		return op((value_type) left[k], (value_type) right[k]);
 	}
 
 	// S1Type::value_type should also work as return type and casting...
 	template <typename N, typename test=decltype(declval<N>().foo(0))>
-	value_type operator_bracket(uint64_t k) const {
+	auto operator_bracket(uint64_t k) const {
 		return op((value_type) left[k]);
 	}
 
-
-	value_type operator[](uint64_t k) const {
+	template<typename K = void>
+	auto operator[](uint64_t k) const {
 		return operator_bracket<RightType>(k);
 	}
 
@@ -173,6 +173,215 @@ public:
 			out << pref << (*this)[i];
 			pref = ", ";
 		}
+	}
+
+	template <bool NonConst>
+	class Iterator;
+
+	using iterator = Iterator<true>;
+	using const_iterator = Iterator<false>;
+
+	// non-const to const is valid
+	template <bool NonConst>
+	class Iterator {
+	private:
+		using vtype = const Expression<S1Type, S2Type, Op>&;
+		uint64_t itr_idx;
+		//uint64_t vnumber;
+		//uint64_t anumber;
+		vtype v;
+
+		/*void check_iterator_validity(void) const {
+			// if the version number has not changed,
+			// Iterator is valid (even if it is out of range!)
+			if (vnumber == v.vnumber) {
+				return;
+			}
+
+			// Iterator references a position that does 
+			// not exist due to modifications in vector
+			// (e.g. out-of-bounds position, because of a pop_back)
+			if (!v.is_idx_in_range(itr_idx)) {
+				throw invalid_iterator(invalid_iterator::SeverityLevel::SEVERE);
+			}
+
+			// if the Iterator reference a position that is in-bounds, but 
+			// the memory location for that position may have been changed 
+			// (e.g., a reallocation has been performed because of a push_back, 
+			// or a new assignment has been performed to the vector), then the 
+			// exception you throw must have the level MODERATE.
+			if (anumber != v.anumber) {
+				throw invalid_iterator(invalid_iterator::SeverityLevel::MODERATE);
+			}
+
+			// invalidated for other reasons
+			throw invalid_iterator(invalid_iterator::SeverityLevel::MILD);
+		}
+
+		void cmp_opt_iterators_validity(Iterator const& rhs) const {
+			this->check_iterator_validity();
+			rhs.check_iterator_validity();
+		}*/
+	
+	public:
+		using value_type = typename Expression<S1Type, S2Type, Op>::value_type;
+		using reference = const value_type&;
+		using pointer = const value_type*;
+		using difference_type = uint64_t;
+		using iterator_category = std::random_access_iterator_tag;
+
+		// need a default constructor due to this link:
+		// http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
+		// the behavior should be undefined though
+		Iterator(void) = default;
+
+		// construct an Iterator, with itr_idx equal to vec.fidx
+		Iterator(vtype vec) : itr_idx(0), v(vec)  {}
+
+		// construct an Iterator, with itr_idx equal to idx
+		Iterator(vtype vec, uint64_t idx) : itr_idx(idx), v(vec)  {}
+
+		// construct an Iterator, with itr_idx equal to vec.eidx + 1 (STL convention [a, b))
+		Iterator(vtype vec, bool dummy) : itr_idx(vec.size()), v(vec) {}
+
+		// copy constuctor
+		Iterator(Iterator const& rhs) = default;
+
+		// copy assignment operator
+		Iterator& operator=(Iterator const& rhs) = default;
+
+		operator const_iterator() const {
+			return const_iterator{this->v, this->itr_idx};
+		}
+
+		// default destructor
+		~Iterator(void) = default;
+
+		value_type operator*(void) const {
+			return v[itr_idx];
+		}
+
+		pointer operator->(void) const { 
+			return &v[itr_idx]; 
+		}
+
+		// itr += a
+		Iterator& operator+=(uint64_t num) {
+			itr_idx += num;
+
+			return *this;
+		}
+
+		// itr + a
+		Iterator operator+(uint64_t num) const {
+			Iterator itr { *this };
+			itr += num;
+
+			return itr;
+		}
+
+		// itr -= a
+		Iterator& operator-=(uint64_t num) {
+			itr_idx -= num;
+
+			return *this;
+		}
+
+		// itr - a
+		Iterator operator-(uint64_t num) const {
+			Iterator itr { *this };
+			itr -= num;
+
+			return itr;
+		}
+
+		// itr1 - itr2
+		// if the vectors in "this" and rhs are different, 
+		// it's undefined behavior
+		uint64_t operator-(Iterator const& rhs) const {
+			return itr_idx - rhs.itr_idx;
+		}
+
+		// itr[] -> *(itr + num)
+		reference operator[](uint64_t num) const {
+			return *(*this + num);
+		}
+
+		// prefix ++
+		Iterator& operator++(void) {
+			itr_idx++;
+			return *this;
+		}
+
+		// postfix ++
+		Iterator operator++(int dummy) {
+			Iterator itr { *this };
+			
+			operator++();
+
+			return itr;
+		}
+
+		// prefix --
+		Iterator& operator--(void) {
+			itr_idx--;
+			return *this;
+		}
+
+		// postfix --
+		Iterator operator--(int dummy) {
+			Iterator itr { *this };
+
+			operator--();
+
+			return itr;
+		}
+
+		// a == b
+		bool operator==(Iterator const& rhs) const { 
+			return itr_idx == rhs.itr_idx;
+		}
+
+		// a != b -> !(a == b)
+		bool operator!=(Iterator const& rhs) const {
+			return !(*this == rhs);
+		}
+
+		// a < b
+		bool operator<(Iterator const& rhs) const {
+			return itr_idx < rhs.itr_idx;
+		}
+
+		// a > b -> !(a < b) && a != b
+		bool operator>(Iterator const& rhs) const {
+			return (rhs < *this) && (rhs != *this);
+		}
+
+		// a <= b -> !(a > b)
+		bool operator<=(Iterator const& rhs) const {
+			return !(*this > rhs);
+		}
+
+		// a >= b -> !(a < b)
+		bool operator>=(Iterator const& rhs) const {
+			return !(*this < rhs);
+		}
+	};
+
+	/*iterator begin(void) {
+		return Iterator<true>(*this);
+	}*/
+
+	const_iterator begin(void) const {
+		return Iterator<false>(*this);
+	}
+
+	/*iterator end(void) {
+		return Iterator<true>(*this, true);
+	}*/
+
+	const_iterator end(void) const {
+		return Iterator<false>(*this, true);
 	}
 };
 
@@ -213,8 +422,8 @@ struct UnaryWrap {
 
 template<typename T>
 struct my_sqrt {
-	constexpr SqrtType<T> operator()(T const& arg) const {
-	    return std::sqrt(arg);
+	SqrtType<T> operator()(T const& arg) const {
+	    return std::sqrt((SqrtType<T>)arg);
 	}
 };
 
@@ -274,7 +483,7 @@ struct Wrap : public E {
 		return result;
 	}
 
-	typename E::const_iterator begin(void) const {
+	/*typename E::const_iterator begin(void) const {
 		return this->E::begin();
 	}
 
@@ -288,7 +497,7 @@ struct Wrap : public E {
 
 	typename E::iterator end(void) {
 		return this->E::end();
-	}
+	}*/
 };
 
 template<typename T>

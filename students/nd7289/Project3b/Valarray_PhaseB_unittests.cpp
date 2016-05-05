@@ -342,3 +342,36 @@ TEST(PhaseB1, ApplyAccumulate) {
     }
 }
 #endif
+
+
+#if defined(PHASE_B3) | defined(PHASE_B)
+TEST(PhaseB1, IteratorPDF) {
+    InstanceCounter::counter = 0;
+    valarray<int> x{1, 1, 1};
+    valarray<int> y{2, 2, 2, 2};
+
+    auto p = (x + y).begin();
+    auto q = (x + y).end();
+    
+    std::cout<<"\n*****" << InstanceCounter::counter<< "\n";
+
+    while (p != q) {
+        cout << *p;
+        ++p; 
+    }
+
+    std::cout<<"\n*****" << InstanceCounter::counter<< "\n";
+
+    valarray<int> t(10);
+    valarray<double> s(10);
+    for (auto const & p : t + s) {
+        cout << typeid(p).name(); // p should be a double
+    }
+
+    auto n = (x + y).sqrt();
+
+    cout << "\nHERE: "<< n << "\n";
+
+}
+#endif
+
