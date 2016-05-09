@@ -47,10 +47,6 @@ public:
 	}
 };
 
-valarray<T> result{lhs};
-result += rhs;
-return result;
-
 template <typename T>
 valarray<T> operator+(valarray<T> const& lhs, valarray<T> const& rhs) {
 	uint64_t size = std::min(lhs.size(), rhs.size());
