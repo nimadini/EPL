@@ -98,10 +98,12 @@ int main1(void) {
  * operator+ function we have to create a temporary (the local variable "result" in
  * the operator+ function). That temporary is contructed, assigned to, returned, and then
  * stupidly read from during the assignment operator.
+ *	 //// in operator+ ////
  *   Construction of result: allocate space potentially assign all elements to zero
  *   Assignment to result: perform N adds, 2N reads and N writes
  *   Returning result and binding result to operator= rhs: free (returned by reference, passed by reference)
- *   operator=: perform N reads and N writes to copy lhs[k] = rhs[k] 
+ *   //// in operator= ////
+ *	 operator=: perform N reads and N writes to copy lhs[k] = rhs[k] 
  *   Destructor for result (performed after op= returns): deallocate memory
  * We could trivially have written the += function to perform only 2N reads and N writes
  * with no allocations

@@ -112,7 +112,11 @@ int main2(void) {
  *
  TODO:::::: why not move assignment for valarray? If we had that then in
  x = y + z, y+z would have been a rvalue, and could have been moved, instead of copy (
- a shallow copy)
+ a shallow copy). 
+ [ND:begin] Our copy logic here is different from regular copy assignments
+ it only affects the min(this->size(), left.size()) elements of the self obj not all.
+ that's why move would have swapped and garbage collected the entire self, which is
+ not what we intend to do! [ND:end]
  * The bigger critque remains this, the code for x = y + z is still inefficient, as
  * it creates a temporary result for y + z and then uses assignment to copy those temporary
  * values into x. That's silly, when compared to would happen if we weren't using this
